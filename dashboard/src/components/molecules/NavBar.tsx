@@ -50,16 +50,9 @@ export default function NavBar({ onRefresh }: NavBarProps) {
 
   return (
     <header className="sticky top-0 z-50 flex h-[52px] items-center gap-0 border-b border-border-subtle bg-bg-app px-4">
-      <div className="flex min-w-40 items-center gap-2.5">
-        <img
-          src={`${import.meta.env.BASE_URL}pinchtab-headed-192.png`}
-          alt="PinchTab"
-          className="h-6 w-6"
-        />
-        <span className="text-sm font-semibold tracking-wide text-text-primary">
-          PinchTab
-        </span>
-      </div>
+      <span className="min-w-32 text-sm font-semibold tracking-wide text-text-primary">
+        PinchTab
+      </span>
 
       <nav className="ml-6 flex items-center gap-0.5" ref={tabsRef}>
         {tabs.map((tab, i) => (
