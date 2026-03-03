@@ -173,9 +173,25 @@ curl http://localhost:9869/text?tabId=Y  # Bob's instance
 
 ---
 
+## Development
+
+Want to contribute? See [DEVELOPMENT.md](DEVELOPMENT.md) for setup instructions.
+
+**Quick start:**
+```bash
+git clone https://github.com/pinchtab/pinchtab.git
+cd pinchtab
+make setup  # Installs git hooks, downloads deps
+make build  # Build pinchtab binary
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
+---
+
 ## License
 
-MIT — Free and open source.
+Apache 2.0 — Free and open source.
 
 ---
 

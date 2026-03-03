@@ -3,10 +3,27 @@
 ## Prerequisites
 
 - **Go 1.25+**
-- **Python 3.8+** (for pre-commit)
 - **Git**
+- **golangci-lint** (optional, for local linting)
 
-## Setup
+## Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/pinchtab/pinchtab.git
+cd pinchtab
+
+# 2. Setup (installs git hooks, downloads deps)
+make setup
+
+# 3. Build and run
+make build
+./pinchtab
+```
+
+That's it! Git hooks are installed automatically and will run on every commit.
+
+## Detailed Setup
 
 ### 1. Clone the repository
 
@@ -15,65 +32,78 @@ git clone https://github.com/pinchtab/pinchtab.git
 cd pinchtab
 ```
 
-### 2. Install pre-commit hooks
-
-This ensures gofmt and linting checks run **before** you commit.
+### 2. Run automated setup
 
 ```bash
-# Install pre-commit framework (one-time)
-pip install pre-commit
-# or: brew install pre-commit
-
-# Setup git hooks in this repo
-pre-commit install
-
-# (Optional) Run hooks on all files to verify setup
-pre-commit run --all-files
+make setup
 ```
 
-### 3. Verify Go environment
+This will:
+- Install git hooks (gofmt + golangci-lint checks before commit)
+- Download Go dependencies
+- Verify your environment
+
+### 3. (Optional) Install golangci-lint
+
+For local linting (recommended):
 
 ```bash
-go version  # Should be 1.25+
-go mod download
+# macOS/Linux
+brew install golangci-lint
+
+# Or via Go
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
+
+Without golangci-lint, commits will still work but won't check linting locally.
 
 ## Before Committing
 
-The pre-commit hooks will automatically run on `git commit`. If you need to manually format:
+Git hooks automatically run on `git commit`. To manually check your code:
 
 ```bash
-# Format all Go code
-./scripts/format.sh
+# Format code
+make fmt
 
-# Or directly
-gofmt -w .
+# Run linter
+make lint
 
-# Run linters manually
-pre-commit run --all-files
+# Run tests
+make test
+
+# All checks (format + lint + test)
+make check
 ```
 
 ## Common Issues
 
-### "pre-commit: command not found"
+### "Git hooks not running on commit"
 
-Install pre-commit:
+Re-run setup:
 ```bash
-pip install pre-commit
+make install-hooks
+```
+
+Verify hooks installed:
+```bash
+cat .git/hooks/pre-commit
+```
+
+### "golangci-lint: command not found" during commit
+
+Hooks will warn but still allow commit. To fix:
+```bash
+brew install golangci-lint
 # or
-brew install pre-commit
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
-Then setup hooks:
+### gofmt fails in CI even though local commit worked
+
+Run format before committing:
 ```bash
-pre-commit install
+make fmt
 ```
-
-### gofmt fails in CI even though pre-commit passed locally
-
-- Ensure you ran `pre-commit install` (not just installed the tool)
-- Verify hooks are installed: `cat .git/hooks/pre-commit`
-- Try updating: `pre-commit autoupdate`
 
 ### Tests failing locally
 
@@ -92,21 +122,25 @@ go test -run TestName ./...
 
 ```bash
 # All tests
-go test ./...
+make test
 
-# With coverage
-go test -cover ./...
+# With coverage report
+make test-cover
+# Opens coverage.html in browser
+```
 
-# Generate coverage report
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
+Or directly with Go:
+```bash
+go test ./...                    # All tests
+go test -v ./...                 # Verbose
+go test -run TestName ./...      # Specific test
 ```
 
 ## Code Style
 
-- **Format:** `gofmt` (automatic via pre-commit)
-- **Lint:** `golangci-lint` (automatic via pre-commit)
-- **Docs:** Files in `docs/` should follow Markdown standards (checked via pre-commit)
+- **Format:** `gofmt` (automatic via git hook, or run `make fmt`)
+- **Lint:** `golangci-lint` (automatic via git hook, or run `make lint`)
+- **Tests:** Must pass (`make test`)
 
 ## Git Workflow
 
@@ -117,11 +151,10 @@ git checkout -b feature/your-feature
 # 2. Make changes
 # ... edit files ...
 
-# 3. Format and test
-./scripts/format.sh
-go test ./...
+# 3. Check your work (optional, hooks will run on commit)
+make check
 
-# 4. Commit (pre-commit hooks run automatically)
+# 4. Commit (git hooks run automatically: gofmt + lint)
 git commit -m "feat: description"
 
 # 5. Push
@@ -129,6 +162,8 @@ git push origin feature/your-feature
 
 # 6. Create Pull Request on GitHub
 ```
+
+**Note:** Git hooks automatically run `gofmt` and `golangci-lint` on staged files before each commit. If checks fail, the commit is blocked.
 
 ## Documentation
 
@@ -149,23 +184,25 @@ Validate docs: `./scripts/check-docs-json.sh`
 ## Useful Commands
 
 ```bash
-# Format without committing
-gofmt -w .
+# Development
+make setup          # Setup dev environment (run once)
+make build          # Build pinchtab binary
+make run            # Build and run
+make fmt            # Format code
+make lint           # Run linter
+make test           # Run tests
+make test-cover     # Run tests with coverage
+make check          # Format + lint + test
+make clean          # Remove build artifacts
+make help           # Show all commands
 
-# Check what would be formatted
-gofmt -l .
-
-# Run specific linter
-golangci-lint run
-
-# Clean build artifacts
-go clean
-
-# Update dependencies
-go get -u ./...
-
-# List all test functions
-go test -list .
+# Direct Go commands
+gofmt -w .          # Format all files
+gofmt -l .          # List files that need formatting
+go test ./...       # Run all tests
+go test -v ./...    # Verbose tests
+go clean            # Clean build cache
+go get -u ./...     # Update dependencies
 ```
 
 ## Getting Help
