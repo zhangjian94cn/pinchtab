@@ -136,6 +136,10 @@ Full docs at **[pinchtab.com/docs](https://pinchtab.com/docs)**
 - **[CLI Reference](https://pinchtab.com/docs/cli-reference)** — Command-line commands
 - **[Configuration](https://pinchtab.com/docs/configuration)** — Environment variables
 
+### MCP (SMCP) integration
+
+An **SMCP plugin** in this repo lets AI agents control PinchTab via the [Model Context Protocol](https://github.com/sanctumos/smcp) (SMCP). One plugin exposes 15 tools (e.g. `pinchtab__navigate`, `pinchtab__snapshot`, `pinchtab__action`). No extra runtime deps (stdlib only). See **[plugins/README.md](plugins/README.md)** for setup (env vars and paths).
+
 ---
 
 ## Examples

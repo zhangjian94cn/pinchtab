@@ -41,6 +41,12 @@ SMCP (MCP) plugin for [PinchTab](https://github.com/pinchtab/pinchtab): browser 
 - **Orchestrator + instance:** When using the orchestrator, pass `--instance-id inst_xxxx` for instance-scoped calls (navigate, snapshot, action, etc.).
 - **Token:** `--token YOUR_TOKEN` when PinchTab is protected with `BRIDGE_TOKEN`.
 
+## SMCP setup (env and paths)
+
+- **MCP_PLUGINS_DIR:** Set to the path of the **parent** `plugins/` directory (the one that contains the `pinchtab` folder). Example: if this repo is at `/home/me/pinchtab`, use `MCP_PLUGINS_DIR=/home/me/pinchtab/plugins`. SMCP will then find `plugins/pinchtab/cli.py` and run `python cli.py --describe`.
+- **No plugin-specific env required:** Base URL, token, and instance ID are passed per tool call by the agent. Default base URL is `http://localhost:9867`.
+- **Venv (optional):** For running tests only: `cd plugins/pinchtab && python3 -m venv .venv && .venv/bin/pip install pytest && .venv/bin/pytest tests/ -v`. The plugin itself uses stdlib only and does not require a venv at runtime.
+
 ## Example (SMCP tool call)
 
 Agent calls tool `pinchtab__navigate` with args:
