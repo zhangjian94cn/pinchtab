@@ -241,6 +241,8 @@ All dev scripts are accessible through `./pdev`:
 ./pdev --help       # List all commands
 ```
 
+![pdev interactive menu](../media/pdev-menu.jpg)
+
 **Available commands:**
 
 | Command | Description |
