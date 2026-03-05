@@ -230,16 +230,23 @@ func TestSafePath_RelativeNormalizesInside(t *testing.T) {
 func TestSafePath_ReturnValueIsAbsolute(t *testing.T) {
 	base := t.TempDir()
 
-	paths := []string{".", "", "sub/file.txt"}
-	for _, p := range paths {
+	for _, p := range []string{".", "", "sub/file.txt"} {
 		t.Run("path="+p, func(t *testing.T) {
 			got, err := SafePath(base, p)
 			if err != nil {
-				return // not testing error cases here
+				t.Fatalf("unexpected error for %q: %v", p, err)
 			}
 			if !filepath.IsAbs(got) {
 				t.Errorf("SafePath(%q, %q) returned non-absolute path %q", base, p, got)
 			}
 		})
 	}
+
+	// Absolute user paths are rejected, so the return value test doesn't apply.
+	t.Run("absolute user path rejected", func(t *testing.T) {
+		_, err := SafePath(base, base)
+		if err == nil {
+			t.Error("expected error for absolute user path")
+		}
+	})
 }
