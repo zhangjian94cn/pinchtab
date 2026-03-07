@@ -28,7 +28,9 @@ func newTestScheduler(t *testing.T) (*Scheduler, *httptest.Server) {
 	// Mock executor that returns success.
 	executor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]bool{"success": true})
+		if err := json.NewEncoder(w).Encode(map[string]bool{"success": true}); err != nil {
+			t.Errorf("encode failed: %v", err)
+		}
 	}))
 
 	// Extract port from executor URL.
@@ -120,11 +122,14 @@ func TestSchedulerCancel_Queued(t *testing.T) {
 	s, executor := newTestScheduler(t)
 	defer executor.Close()
 
-	task, _ := s.Submit(SubmitRequest{
+	task, err := s.Submit(SubmitRequest{
 		AgentID: "a1",
 		Action:  "click",
 		TabID:   "tab-1",
 	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	if err := s.Cancel(task.ID); err != nil {
 		t.Fatalf("cancel failed: %v", err)
@@ -152,8 +157,12 @@ func TestSchedulerListTasks(t *testing.T) {
 	s, executor := newTestScheduler(t)
 	defer executor.Close()
 
-	s.Submit(SubmitRequest{AgentID: "a1", Action: "click", TabID: "tab-1"})
-	s.Submit(SubmitRequest{AgentID: "a2", Action: "navigate", TabID: "tab-2"})
+	if _, err := s.Submit(SubmitRequest{AgentID: "a1", Action: "click", TabID: "tab-1"}); err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
+	if _, err := s.Submit(SubmitRequest{AgentID: "a2", Action: "navigate", TabID: "tab-2"}); err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	all := s.ListTasks("", nil)
 	if len(all) < 2 {
@@ -169,7 +178,9 @@ func TestSchedulerListTasks(t *testing.T) {
 func TestSchedulerDispatchAndComplete(t *testing.T) {
 	executor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]bool{"success": true})
+		if err := json.NewEncoder(w).Encode(map[string]bool{"success": true}); err != nil {
+			t.Errorf("encode failed: %v", err)
+		}
 	}))
 	defer executor.Close()
 
@@ -219,7 +230,9 @@ func TestSchedulerDispatchAndComplete(t *testing.T) {
 func TestSchedulerDispatchFailure(t *testing.T) {
 	executor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
-		fmt.Fprint(w, `{"error":"internal"}`)
+		if _, err := fmt.Fprint(w, `{"error":"internal"}`); err != nil {
+			t.Errorf("fprint failed: %v", err)
+		}
 	}))
 	defer executor.Close()
 
@@ -233,11 +246,14 @@ func TestSchedulerDispatchFailure(t *testing.T) {
 	s.Start()
 	defer s.Stop()
 
-	task, _ := s.Submit(SubmitRequest{
+	task, err := s.Submit(SubmitRequest{
 		AgentID: "a1",
 		Action:  "click",
 		TabID:   "tab-1",
 	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	deadline := time.After(5 * time.Second)
 	for {
@@ -266,11 +282,14 @@ func TestSchedulerResolverError(t *testing.T) {
 	s.Start()
 	defer s.Stop()
 
-	task, _ := s.Submit(SubmitRequest{
+	task, err := s.Submit(SubmitRequest{
 		AgentID: "a1",
 		Action:  "click",
 		TabID:   "tab-1",
 	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	deadline := time.After(5 * time.Second)
 	for {
@@ -305,11 +324,14 @@ func TestSchedulerStopCancelsQueued(t *testing.T) {
 	s, executor := newTestScheduler(t)
 	defer executor.Close()
 
-	task, _ := s.Submit(SubmitRequest{
+	task, err := s.Submit(SubmitRequest{
 		AgentID: "a1",
 		Action:  "click",
 		TabID:   "tab-1",
 	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	s.Stop()
 

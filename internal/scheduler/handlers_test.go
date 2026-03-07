@@ -13,7 +13,9 @@ func setupHandlerTest(t *testing.T) (*Scheduler, *http.ServeMux, *httptest.Serve
 
 	executor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]bool{"success": true})
+		if err := json.NewEncoder(w).Encode(map[string]bool{"success": true}); err != nil {
+			t.Errorf("encode failed: %v", err)
+		}
 	}))
 
 	parts := strings.Split(executor.URL, ":")
@@ -46,7 +48,9 @@ func TestHandlerSubmit(t *testing.T) {
 	}
 
 	var resp map[string]any
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
 	if resp["taskId"] == nil {
 		t.Error("response should contain taskId")
 	}
@@ -90,9 +94,12 @@ func TestHandlerGet(t *testing.T) {
 	s, mux, executor := setupHandlerTest(t)
 	defer executor.Close()
 
-	task, _ := s.Submit(SubmitRequest{
+	task, err := s.Submit(SubmitRequest{
 		AgentID: "a1", Action: "click", TabID: "tab-1",
 	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	req := httptest.NewRequest("GET", "/tasks/"+task.ID, nil)
 	w := httptest.NewRecorder()
@@ -104,7 +111,9 @@ func TestHandlerGet(t *testing.T) {
 	}
 
 	var resp map[string]any
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
 	if resp["taskId"] != task.ID {
 		t.Errorf("expected task ID %s, got %v", task.ID, resp["taskId"])
 	}
@@ -128,9 +137,12 @@ func TestHandlerCancel(t *testing.T) {
 	s, mux, executor := setupHandlerTest(t)
 	defer executor.Close()
 
-	task, _ := s.Submit(SubmitRequest{
+	task, err := s.Submit(SubmitRequest{
 		AgentID: "a1", Action: "click", TabID: "tab-1",
 	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	req := httptest.NewRequest("POST", "/tasks/"+task.ID+"/cancel", nil)
 	w := httptest.NewRecorder()
@@ -160,8 +172,12 @@ func TestHandlerList(t *testing.T) {
 	s, mux, executor := setupHandlerTest(t)
 	defer executor.Close()
 
-	s.Submit(SubmitRequest{AgentID: "a1", Action: "click", TabID: "tab-1"})
-	s.Submit(SubmitRequest{AgentID: "a2", Action: "navigate", TabID: "tab-2"})
+	if _, err := s.Submit(SubmitRequest{AgentID: "a1", Action: "click", TabID: "tab-1"}); err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
+	if _, err := s.Submit(SubmitRequest{AgentID: "a2", Action: "navigate", TabID: "tab-2"}); err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	req := httptest.NewRequest("GET", "/tasks", nil)
 	w := httptest.NewRecorder()
@@ -172,7 +188,9 @@ func TestHandlerList(t *testing.T) {
 	}
 
 	var resp map[string]any
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
 	if resp["count"] == nil {
 		t.Error("response should contain count")
 	}
@@ -182,8 +200,12 @@ func TestHandlerListWithFilters(t *testing.T) {
 	s, mux, executor := setupHandlerTest(t)
 	defer executor.Close()
 
-	s.Submit(SubmitRequest{AgentID: "a1", Action: "click", TabID: "tab-1"})
-	s.Submit(SubmitRequest{AgentID: "a2", Action: "navigate", TabID: "tab-2"})
+	if _, err := s.Submit(SubmitRequest{AgentID: "a1", Action: "click", TabID: "tab-1"}); err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
+	if _, err := s.Submit(SubmitRequest{AgentID: "a2", Action: "navigate", TabID: "tab-2"}); err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
 
 	req := httptest.NewRequest("GET", "/tasks?agentId=a1&state=queued", nil)
 	w := httptest.NewRecorder()
@@ -194,7 +216,9 @@ func TestHandlerListWithFilters(t *testing.T) {
 	}
 
 	var resp map[string]any
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
 	count := int(resp["count"].(float64))
 	if count != 1 {
 		t.Errorf("expected 1 filtered task, got %d", count)

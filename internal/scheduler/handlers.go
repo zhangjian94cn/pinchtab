@@ -103,7 +103,7 @@ func (s *Scheduler) handleList(w http.ResponseWriter, r *http.Request) {
 
 	tasks := s.ListTasks(agentID, states)
 	if tasks == nil {
-		tasks = []Task{}
+		tasks = []*Task{}
 	}
 	web.JSON(w, 200, map[string]any{"tasks": tasks, "count": len(tasks)})
 }

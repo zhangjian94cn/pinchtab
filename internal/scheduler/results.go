@@ -52,7 +52,7 @@ func (rs *ResultStore) Stop() {
 func (rs *ResultStore) Store(t *Task) {
 	snap := t.Snapshot()
 	rs.mu.Lock()
-	rs.tasks[snap.ID] = &snap
+	rs.tasks[snap.ID] = snap
 	rs.mu.Unlock()
 }
 
@@ -64,7 +64,7 @@ func (rs *ResultStore) Get(taskID string) *Task {
 }
 
 // List returns all stored tasks, optionally filtered.
-func (rs *ResultStore) List(agentID string, states []TaskState) []Task {
+func (rs *ResultStore) List(agentID string, states []TaskState) []*Task {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
 
@@ -73,7 +73,7 @@ func (rs *ResultStore) List(agentID string, states []TaskState) []Task {
 		stateSet[s] = true
 	}
 
-	var out []Task
+	var out []*Task
 	for _, t := range rs.tasks {
 		if agentID != "" && t.AgentID != agentID {
 			continue
@@ -81,7 +81,7 @@ func (rs *ResultStore) List(agentID string, states []TaskState) []Task {
 		if len(stateSet) > 0 && !stateSet[t.State] {
 			continue
 		}
-		out = append(out, *t)
+		out = append(out, t.Snapshot())
 	}
 	return out
 }

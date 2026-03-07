@@ -36,8 +36,12 @@ func TestQueueEnqueueDequeue(t *testing.T) {
 func TestQueueGlobalLimit(t *testing.T) {
 	q := NewTaskQueue(2, 10)
 
-	q.Enqueue(&Task{ID: "t1", AgentID: "a1", CreatedAt: time.Now()})
-	q.Enqueue(&Task{ID: "t2", AgentID: "a1", CreatedAt: time.Now()})
+	if _, err := q.Enqueue(&Task{ID: "t1", AgentID: "a1", CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue failed: %v", err)
+	}
+	if _, err := q.Enqueue(&Task{ID: "t2", AgentID: "a1", CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue failed: %v", err)
+	}
 	_, err := q.Enqueue(&Task{ID: "t3", AgentID: "a1", CreatedAt: time.Now()})
 	if err == nil {
 		t.Error("should reject when global limit reached")
@@ -47,8 +51,12 @@ func TestQueueGlobalLimit(t *testing.T) {
 func TestQueuePerAgentLimit(t *testing.T) {
 	q := NewTaskQueue(100, 2)
 
-	q.Enqueue(&Task{ID: "t1", AgentID: "a1", CreatedAt: time.Now()})
-	q.Enqueue(&Task{ID: "t2", AgentID: "a1", CreatedAt: time.Now()})
+	if _, err := q.Enqueue(&Task{ID: "t1", AgentID: "a1", CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue failed: %v", err)
+	}
+	if _, err := q.Enqueue(&Task{ID: "t2", AgentID: "a1", CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue failed: %v", err)
+	}
 	_, err := q.Enqueue(&Task{ID: "t3", AgentID: "a1", CreatedAt: time.Now()})
 	if err == nil {
 		t.Error("should reject when per-agent limit reached")

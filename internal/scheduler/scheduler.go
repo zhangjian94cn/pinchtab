@@ -238,7 +238,7 @@ func (s *Scheduler) Cancel(taskID string) error {
 }
 
 // ListTasks returns tasks matching the given filters.
-func (s *Scheduler) ListTasks(agentID string, states []TaskState) []Task {
+func (s *Scheduler) ListTasks(agentID string, states []TaskState) []*Task {
 	return s.results.List(agentID, states)
 }
 

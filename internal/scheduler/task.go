@@ -101,10 +101,10 @@ func (t *Task) GetState() TaskState {
 }
 
 // Snapshot returns a read-consistent copy of the task for serialization.
-func (t *Task) Snapshot() Task {
+func (t *Task) Snapshot() *Task {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	return Task{
+	return &Task{
 		ID:          t.ID,
 		AgentID:     t.AgentID,
 		Action:      t.Action,
