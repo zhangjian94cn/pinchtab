@@ -30,8 +30,12 @@ end_test
 # ─────────────────────────────────────────────────────────────────
 start_test "pinchtab upload --tab <id>"
 
+# Open upload page in new tab to get known tab ID  
+pt_post /navigate -d "{\"url\":\"${FIXTURES_URL}/upload.html\",\"newTab\":true}"
+sleep 1
+
 pt_get /tabs
-TAB_ID=$(get_first_tab)
+TAB_ID=$(get_last_tab)
 
 # 1x1 transparent PNG
 PNG_DATA="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="

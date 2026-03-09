@@ -52,8 +52,12 @@ end_test
 # ─────────────────────────────────────────────────────────────────
 start_test "pinchtab find --tab <id>"
 
+# Open find page in new tab to get known tab ID
+pt_post /navigate -d "{\"url\":\"${FIXTURES_URL}/find.html\",\"newTab\":true}"
+sleep 1
+
 pt_get /tabs
-TAB_ID=$(get_first_tab)
+TAB_ID=$(get_last_tab)
 
 pt_post "/tabs/${TAB_ID}/find" -d '{"query":"sign up link"}'
 assert_ok "tab find"
