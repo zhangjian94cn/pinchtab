@@ -29,6 +29,8 @@ type Config struct {
 	MaxPerAgentFlight int           `json:"maxPerAgentInflight"`
 	ResultTTL         time.Duration `json:"resultTTL"`
 	WorkerCount       int           `json:"workerCount"`
+	MaxBatchSize      int           `json:"maxBatchSize"`
+	WatcherInterval   time.Duration `json:"watcherInterval"`
 }
 
 // DefaultConfig returns safe defaults.
@@ -41,6 +43,8 @@ func DefaultConfig() Config {
 		MaxPerAgentFlight: 10,
 		ResultTTL:         5 * time.Minute,
 		WorkerCount:       4,
+		MaxBatchSize:      50,
+		WatcherInterval:   30 * time.Second,
 	}
 }
 
@@ -89,6 +93,12 @@ func New(cfg Config, resolver InstanceResolver) *Scheduler {
 	}
 	if cfg.WorkerCount <= 0 {
 		cfg.WorkerCount = 4
+	}
+	if cfg.MaxBatchSize <= 0 {
+		cfg.MaxBatchSize = 50
+	}
+	if cfg.WatcherInterval <= 0 {
+		cfg.WatcherInterval = 30 * time.Second
 	}
 
 	return &Scheduler{

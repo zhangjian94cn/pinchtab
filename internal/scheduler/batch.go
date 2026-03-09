@@ -9,8 +9,6 @@ import (
 	"github.com/pinchtab/pinchtab/internal/web"
 )
 
-const maxBatchSize = 50
-
 var (
 	errMissingAgentID = errors.New("missing required field 'agentId'")
 	errEmptyBatch     = errors.New("batch must contain at least one task")
@@ -56,10 +54,13 @@ func (s *Scheduler) handleBatch(w http.ResponseWriter, r *http.Request) {
 		web.Error(w, 400, errEmptyBatch)
 		return
 	}
-	if len(req.Tasks) > maxBatchSize {
+	s.cfgMu.RLock()
+	maxBatch := s.cfg.MaxBatchSize
+	s.cfgMu.RUnlock()
+	if len(req.Tasks) > maxBatch {
 		web.ErrorCode(w, 400, "batch_too_large", "batch exceeds maximum size", false, map[string]any{
 			"submitted": len(req.Tasks),
-			"max":       maxBatchSize,
+			"max":       maxBatch,
 		})
 		return
 	}

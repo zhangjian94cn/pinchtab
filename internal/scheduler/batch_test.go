@@ -88,8 +88,8 @@ func TestHandleBatchTooLarge(t *testing.T) {
 	_, mux, executor := setupHandlerTest(t)
 	defer executor.Close()
 
-	// Build batch with maxBatchSize+1 tasks.
-	tasks := make([]map[string]string, maxBatchSize+1)
+	// Build batch with more than the default max (50) tasks.
+	tasks := make([]map[string]string, 51)
 	for i := range tasks {
 		tasks[i] = map[string]string{"action": "click", "tabId": "t1"}
 	}
