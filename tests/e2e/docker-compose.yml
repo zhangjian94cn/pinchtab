@@ -1,4 +1,5 @@
 services:
+  # Main instance: security features ENABLED (permissive)
   pinchtab:
     build:
       context: ../..
@@ -6,6 +7,21 @@ services:
     ports:
       - "9999:9999"
     # Chrome needs more shared memory in Docker
+    shm_size: '2gb'
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9999/health"]
+      interval: 3s
+      timeout: 10s
+      retries: 20
+      start_period: 15s
+
+  # Secure instance: security features DISABLED (restrictive)
+  pinchtab-secure:
+    build:
+      context: ../..
+      dockerfile: tests/e2e/Dockerfile.pinchtab-secure
+    ports:
+      - "9998:9999"
     shm_size: '2gb'
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9999/health"]
@@ -30,10 +46,13 @@ services:
     depends_on:
       pinchtab:
         condition: service_healthy
+      pinchtab-secure:
+        condition: service_healthy
       fixtures:
         condition: service_healthy
     environment:
       - PINCHTAB_URL=http://pinchtab:9999
+      - PINCHTAB_SECURE_URL=http://pinchtab-secure:9999
       - FIXTURES_URL=http://fixtures:80
     volumes:
       - ./scenarios:/scenarios:ro

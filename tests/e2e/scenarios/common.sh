@@ -14,6 +14,7 @@ NC='\033[0m'
 
 # Defaults from environment
 PINCHTAB_URL="${PINCHTAB_URL:-http://localhost:9999}"
+PINCHTAB_SECURE_URL="${PINCHTAB_SECURE_URL:-http://localhost:9998}"
 FIXTURES_URL="${FIXTURES_URL:-http://localhost:8080}"
 RESULTS_DIR="${RESULTS_DIR:-/results}"
 
