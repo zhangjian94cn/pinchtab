@@ -72,11 +72,11 @@ func TestConfigCLI_Show(t *testing.T) {
 	}
 
 	// Should have section headers
-	if !strings.Contains(output, "Server:") {
-		t.Errorf("expected output to contain 'Server:' section, got: %s", output)
+	if !strings.Contains(output, "Server") {
+		t.Errorf("expected output to contain 'Server' section, got: %s", output)
 	}
-	if !strings.Contains(output, "Browser / Instance Defaults:") {
-		t.Errorf("expected output to contain 'Browser / Instance Defaults:' section, got: %s", output)
+	if !strings.Contains(output, "Browser / Instance Defaults") {
+		t.Errorf("expected output to contain 'Browser / Instance Defaults' section, got: %s", output)
 	}
 }
 

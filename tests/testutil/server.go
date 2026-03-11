@@ -50,7 +50,7 @@ type ServerConfig struct {
 	IDPI appconfig.IDPIConfig
 
 	// Orchestrator
-	Strategy         string // default: "" (uses config default: "always-on")
+	Strategy         string // default: "" (uses app config default: "simple")
 	AllocationPolicy string // default: "" (uses config default: "fcfs")
 }
 

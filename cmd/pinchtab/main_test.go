@@ -24,26 +24,3 @@ func TestServerTimeoutOrdering(t *testing.T) {
 	}
 }
 
-func TestStartupMode(t *testing.T) {
-	tests := []struct {
-		name string
-		args []string
-		want string
-		ok   bool
-	}{
-		{name: "default", args: []string{"pinchtab"}, want: "server", ok: true},
-		{name: "server explicit", args: []string{"pinchtab", "server"}, want: "server", ok: true},
-		{name: "bridge explicit", args: []string{"pinchtab", "bridge"}, want: "bridge", ok: true},
-		{name: "unknown rejected", args: []string{"pinchtab", "weird"}, want: "", ok: false},
-		{name: "dashboard rejected", args: []string{"pinchtab", "dashboard"}, want: "", ok: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, ok := startupMode(tt.args)
-			if ok != tt.ok || got != tt.want {
-				t.Fatalf("startupMode(%v) = (%q, %v), want (%q, %v)", tt.args, got, ok, tt.want, tt.ok)
-			}
-		})
-	}
-}

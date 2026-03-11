@@ -384,11 +384,11 @@ func TestCLIScroll(t *testing.T) {
 		t.Errorf("expected scrollY=800, got %v", body["scrollY"])
 	}
 
-	// Scroll by direction
+	// Scroll by direction aliases.
 	cliAction(client, m.base(), "", "scroll", []string{"down"})
 	_ = json.Unmarshal([]byte(m.lastBody), &body)
-	if body["direction"] != "down" {
-		t.Errorf("expected direction=down, got %v", body["direction"])
+	if body["scrollY"] != float64(800) {
+		t.Errorf("expected down to map to scrollY=800, got %v", body["scrollY"])
 	}
 }
 

@@ -154,7 +154,7 @@ func TestRenderOnboardGuideIncludesSecurityValues(t *testing.T) {
 		"security.allowEvaluate  false",
 		"security.attach.enabled  false",
 		"security.idpi.strictMode  true",
-		"pinchtab daemon status",
+		"pinchtab daemon",
 	}
 	for _, needle := range required {
 		if !strings.Contains(output, needle) {

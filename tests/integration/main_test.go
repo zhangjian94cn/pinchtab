@@ -20,6 +20,7 @@ func TestMain(m *testing.M) {
 	startFixtureSite()
 
 	cfg := testutil.DefaultConfig()
+	cfg.Strategy = "always-on"
 
 	var err error
 	server, err = testutil.StartServer(cfg)
