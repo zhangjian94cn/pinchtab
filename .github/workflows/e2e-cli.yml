@@ -2,7 +2,6 @@ name: E2E CLI Tests
 
 permissions:
   contents: read
-  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -103,48 +102,22 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Comment on PR
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const passed = '${{ steps.e2e.outputs.passed }}';
-            const failed = '${{ steps.e2e.outputs.failed }}';
-            const failures = `${{ steps.e2e.outputs.failures }}`;
-            
-            let body;
-            if (failed === '0' || failed === '') {
-              body = `## ✅ CLI E2E Tests Passed\n\n**${passed || 'All'}** tests passed`;
-            } else {
-              body = `## ❌ CLI E2E Tests Failed\n\n**Passed:** ${passed}\n**Failed:** ${failed}\n\n### Failed tests:\n\`\`\`\n${failures}\n\`\`\``;
-            }
-            
-            // Find existing comment
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            
-            const botComment = comments.find(c => 
-              c.user.type === 'Bot' && c.body.includes('CLI E2E Tests')
-            );
-            
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: body
-              });
-            }
+      - name: Report check annotation
+        if: always()
+        run: |
+          PASSED="${{ steps.e2e.outputs.passed }}"
+          FAILED="${{ steps.e2e.outputs.failed }}"
+          FAILURES="${{ steps.e2e.outputs.failures }}"
+          
+          if [ "$FAILED" = "0" ] || [ -z "$FAILED" ]; then
+            echo "::notice title=CLI E2E Tests::✅ ${PASSED:-All} tests passed"
+          else
+            echo "::error title=CLI E2E Tests::❌ ${FAILED} failed, ${PASSED} passed"
+            # Log each failure as warning
+            echo "$FAILURES" | while read -r line; do
+              [ -n "$line" ] && echo "::warning::$line"
+            done
+          fi
 
       - name: Upload results
         if: always()
