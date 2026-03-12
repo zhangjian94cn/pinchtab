@@ -16,26 +16,8 @@ echo "  Server: $PINCHTAB_URL"
 echo "  Fixtures: $FIXTURES_URL"
 echo ""
 
-# Wait for server AND instance to be ready
-echo "Waiting for pinchtab server..."
-for i in $(seq 1 30); do
-  if curl -s "$PINCHTAB_URL/health" > /dev/null 2>&1; then
-    echo "Server responding..."
-    break
-  fi
-  sleep 1
-done
-
-echo "Waiting for Chrome instance to be ready..."
-for i in $(seq 1 60); do
-  # Try a simple snapshot - if it works, Chrome is ready
-  if PINCHTAB_URL="$PINCHTAB_URL" pinchtab health 2>/dev/null | grep -q '"ready":true'; then
-    echo "Instance ready!"
-    break
-  fi
-  echo "  waiting... ($i/60)"
-  sleep 2
-done
+# Wait for instance to be ready (same as curl-based tests)
+wait_for_instance_ready "$PINCHTAB_URL"
 
 # Verify pinchtab CLI is available
 if ! command -v pinchtab &> /dev/null; then
