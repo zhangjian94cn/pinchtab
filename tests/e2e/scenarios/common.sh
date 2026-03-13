@@ -513,6 +513,20 @@ get_tab_id() {
   echo "$RESULT" | jq -r '.tabId'
 }
 
+# Extract tabId from RESULT, assert it's non-null, store in TAB_ID
+# Usage: assert_tab_id "description"
+assert_tab_id() {
+  local desc="${1:-tabId returned}"
+  TAB_ID=$(echo "$RESULT" | jq -r '.tabId')
+  if [ -n "$TAB_ID" ] && [ "$TAB_ID" != "null" ]; then
+    echo -e "  ${GREEN}✓${NC} $desc: ${TAB_ID:0:12}..."
+    ((ASSERTIONS_PASSED++)) || true
+  else
+    echo -e "  ${RED}✗${NC} no tabId in response"
+    ((ASSERTIONS_FAILED++)) || true
+  fi
+}
+
 # Get first tab ID from /tabs response
 get_first_tab() {
   echo "$RESULT" | jq -r '.tabs[0].id'

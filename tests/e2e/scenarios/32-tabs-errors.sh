@@ -47,15 +47,7 @@ start_test "tabs: new tab returns tabId"
 
 pt_post /tab '{"action":"new","url":"about:blank"}'
 assert_ok "new tab"
-TAB_ID=$(echo "$RESULT" | jq -r '.tabId')
-
-if [ -n "$TAB_ID" ] && [ "$TAB_ID" != "null" ]; then
-  echo -e "  ${GREEN}✓${NC} tabId returned: ${TAB_ID:0:12}..."
-  ((ASSERTIONS_PASSED++)) || true
-else
-  echo -e "  ${RED}✗${NC} no tabId in response"
-  ((ASSERTIONS_FAILED++)) || true
-fi
+assert_tab_id "new tab returns tabId"
 
 # Cleanup
 pt_post /tab "{\"action\":\"close\",\"tabId\":\"${TAB_ID}\"}"
