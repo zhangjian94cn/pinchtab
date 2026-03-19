@@ -1,4 +1,4 @@
-name: E2E
+name: CI / E2E
 
 permissions:
   contents: read
@@ -15,13 +15,11 @@ on:
       - 'plugin/**'
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   api-fast:
     if: github.event_name != 'workflow_dispatch'
-    uses: ./.github/workflows/reusable-e2e-suite.yml
+    uses: ./.github/workflows/reusable-e2e.yml
     with:
       ref: ${{ github.sha }}
       suite: api-fast
@@ -31,7 +29,7 @@ jobs:
 
   cli-fast:
     if: github.event_name != 'workflow_dispatch'
-    uses: ./.github/workflows/reusable-e2e-suite.yml
+    uses: ./.github/workflows/reusable-e2e.yml
     with:
       ref: ${{ github.sha }}
       suite: cli-fast
@@ -41,7 +39,7 @@ jobs:
 
   full-api:
     if: github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/reusable-e2e-suite.yml
+    uses: ./.github/workflows/reusable-e2e.yml
     with:
       ref: ${{ github.sha }}
       suite: full-api
@@ -51,7 +49,7 @@ jobs:
 
   full-cli:
     if: github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/reusable-e2e-suite.yml
+    uses: ./.github/workflows/reusable-e2e.yml
     with:
       ref: ${{ github.sha }}
       suite: full-cli

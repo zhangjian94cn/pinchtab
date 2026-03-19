@@ -1,4 +1,4 @@
-name: Reusable Documentation Verification
+name: Reusable / Docs
 
 on:
   workflow_call:
@@ -7,8 +7,6 @@ on:
         required: true
         type: string
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read

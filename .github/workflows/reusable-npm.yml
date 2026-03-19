@@ -1,4 +1,4 @@
-name: Reusable npm Package Verification
+name: Reusable / npm
 
 on:
   workflow_call:
@@ -10,8 +10,6 @@ on:
         required: false
         type: string
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read

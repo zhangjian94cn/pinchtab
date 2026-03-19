@@ -1,4 +1,4 @@
-name: Go Verification
+name: CI / Go
 
 on:
   push:
@@ -21,8 +21,6 @@ on:
       - 'plugin/**'
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read
@@ -30,6 +28,6 @@ permissions:
 jobs:
   go:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ./.github/workflows/reusable-go-verify.yml
+    uses: ./.github/workflows/reusable-go.yml
     with:
       ref: ${{ github.sha }}
