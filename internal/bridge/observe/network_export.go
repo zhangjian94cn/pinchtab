@@ -8,6 +8,7 @@ import (
 	"sync"
 )
 
+
 // ---------------------------------------------------------------------------
 // ExportEncoder — pluggable format interface
 // ---------------------------------------------------------------------------
@@ -46,10 +47,11 @@ var (
 )
 
 // RegisterFormat registers an export format. Called from init() in format files.
+// Names are normalized to lowercase for case-insensitive lookup.
 func RegisterFormat(name string, factory ExportEncoderFactory) {
 	formatsMu.Lock()
 	defer formatsMu.Unlock()
-	formats[name] = factory
+	formats[strings.ToLower(name)] = factory
 }
 
 // GetFormat returns the factory for a named format, or nil if not found.
@@ -233,6 +235,27 @@ func computeTimings(entry NetworkEntry) ExportTimings {
 		wait = 0
 	}
 	return ExportTimings{Send: send, Wait: wait, Receive: receive}
+}
+
+// sensitiveHeaderNames are headers that contain credentials or session tokens.
+// They are redacted by default in exports to prevent accidental data leakage.
+var sensitiveHeaderNames = map[string]bool{
+	"cookie":              true,
+	"set-cookie":          true,
+	"authorization":       true,
+	"proxy-authorization": true,
+	"x-api-key":           true,
+	"x-csrf-token":        true,
+}
+
+// RedactSensitiveHeaders replaces the values of credential-bearing headers with [REDACTED].
+func RedactSensitiveHeaders(pairs []NameValuePair) []NameValuePair {
+	for i := range pairs {
+		if sensitiveHeaderNames[strings.ToLower(pairs[i].Name)] {
+			pairs[i].Value = "[REDACTED]"
+		}
+	}
+	return pairs
 }
 
 func contentTypeFromHeaders(headers map[string]string) string {

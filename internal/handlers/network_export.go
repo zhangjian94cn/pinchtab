@@ -1,17 +1,24 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/pinchtab/pinchtab/internal/bridge"
 	"github.com/pinchtab/pinchtab/internal/bridge/observe"
 	"github.com/pinchtab/pinchtab/internal/httpx"
 )
+
+// maxExportBodyBytes caps the size of a single response body included in an export.
+const maxExportBodyBytes = 10 << 20 // 10 MB
 
 // HandleNetworkExport exports captured network data in a registered format (HAR, NDJSON, etc.).
 //
@@ -23,6 +30,7 @@ import (
 // @Param output  string query "file" to save to disk (optional)
 // @Param path    string query Filename when output=file (optional, auto-generated if omitted)
 // @Param body    string query "true" to include response bodies (can be slow)
+// @Param redact  string query "false" to include sensitive headers like cookies (default: redacted)
 // @Param filter  string query URL pattern filter
 // @Param method  string query HTTP method filter
 // @Param status  string query Status code range filter (e.g. "4xx")
@@ -32,6 +40,7 @@ import (
 // @Response 200 application/har+json|application/x-ndjson  Exported data (streamed)
 // @Response 200 application/json                           File save result when output=file
 // @Response 400 application/json                           Invalid format or parameters
+// @Response 423 application/json                           Tab is locked
 // @Response 500 application/json                           Export error
 func (h *Handlers) HandleNetworkExport(w http.ResponseWriter, r *http.Request) {
 	if err := h.ensureChrome(); err != nil {
@@ -48,6 +57,16 @@ func (h *Handlers) HandleNetworkExport(w http.ResponseWriter, r *http.Request) {
 	if _, ok := h.enforceCurrentTabDomainPolicy(w, r, tabCtx, resolvedTabID); !ok {
 		return
 	}
+
+	// Tab lease enforcement (#12)
+	owner := resolveOwner(r, "")
+	if err := h.enforceTabLease(resolvedTabID, owner); err != nil {
+		httpx.ErrorCode(w, http.StatusLocked, "tab_locked", err.Error(), false, nil)
+		return
+	}
+
+	// Activity recording (#13)
+	h.recordReadRequest(r, "network-export", resolvedTabID)
 
 	// Resolve format from registry
 	formatName := r.URL.Query().Get("format")
@@ -67,10 +86,11 @@ func (h *Handlers) HandleNetworkExport(w http.ResponseWriter, r *http.Request) {
 	// Get network entries
 	nm := h.Bridge.NetworkMonitor()
 	if nm == nil {
-		// No monitor — export empty
 		enc := factory("PinchTab", h.version())
 		w.Header().Set("Content-Type", enc.ContentType())
-		_ = enc.Start(w)
+		if err := enc.Start(w); err != nil {
+			return
+		}
 		_ = enc.Finish()
 		return
 	}
@@ -92,7 +112,13 @@ func (h *Handlers) HandleNetworkExport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	includeBody := r.URL.Query().Get("body") == "true"
+	redactHeaders := r.URL.Query().Get("redact") != "false"
 	output := r.URL.Query().Get("output")
+
+	// Timeout + client disconnect for body fetches (#4, #5)
+	fetchCtx, fetchCancel := context.WithTimeout(tabCtx, h.Config.ActionTimeout)
+	defer fetchCancel()
+	go httpx.CancelOnClientDone(r.Context(), fetchCancel)
 
 	// Convert entries
 	exportEntries := make([]observe.ExportEntry, 0, len(entries))
@@ -100,9 +126,19 @@ func (h *Handlers) HandleNetworkExport(w http.ResponseWriter, r *http.Request) {
 		var body string
 		var b64 bool
 		if includeBody && entry.Finished && !entry.Failed {
-			body, b64, _ = nm.GetResponseBody(tabCtx, entry.RequestID)
+			body, b64, _ = nm.GetResponseBody(fetchCtx, entry.RequestID)
+			// Cap body size (#3)
+			if len(body) > maxExportBodyBytes {
+				body = ""
+				b64 = false
+			}
 		}
-		exportEntries = append(exportEntries, observe.NetworkEntryToExport(entry, body, b64))
+		e := observe.NetworkEntryToExport(entry, body, b64)
+		if redactHeaders {
+			e.Request.Headers = observe.RedactSensitiveHeaders(e.Request.Headers)
+			e.Response.Headers = observe.RedactSensitiveHeaders(e.Response.Headers)
+		}
+		exportEntries = append(exportEntries, e)
 	}
 
 	enc := factory("PinchTab", h.version())
@@ -140,13 +176,24 @@ func (h *Handlers) writeExportFile(
 		userPath = fmt.Sprintf("network-%s%s", ts, enc.FileExtension())
 	}
 
-	dir := filepath.Join(h.Config.StateDir, "exports")
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	// Path safety: use SafeCreatePath + containment check (#1)
+	exportDir := filepath.Join(h.Config.StateDir, "exports")
+	if err := os.MkdirAll(exportDir, 0750); err != nil {
 		return fmt.Errorf("create dir: %w", err)
 	}
 
-	finalPath := filepath.Join(dir, filepath.Base(userPath))
-	tmpPath := finalPath + ".tmp"
+	safeName := filepath.Base(userPath)
+	finalPath, err := httpx.SafeCreatePath(exportDir, safeName)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+	absBase, _ := filepath.Abs(exportDir)
+	absPath, err := filepath.Abs(finalPath)
+	if err != nil || !strings.HasPrefix(absPath, absBase+string(filepath.Separator)) {
+		return fmt.Errorf("path escapes export directory")
+	}
+
+	tmpPath := absPath + ".tmp"
 
 	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -175,13 +222,13 @@ func (h *Handlers) writeExportFile(
 		return err
 	}
 
-	if err := os.Rename(tmpPath, finalPath); err != nil {
+	if err := os.Rename(tmpPath, absPath); err != nil {
 		os.Remove(tmpPath)
 		return err
 	}
 
 	httpx.JSON(w, 200, map[string]any{
-		"path":    finalPath,
+		"path":    absPath,
 		"entries": len(entries),
 		"format":  formatName,
 	})
@@ -197,9 +244,11 @@ func (h *Handlers) writeExportFile(
 // @Param format  string query Export format (default: har)
 // @Param path    string query Output filename (required)
 // @Param body    string query "true" to include response bodies
+// @Param redact  string query "false" to include sensitive headers (default: redacted)
 // @Param filter... (same as HandleNetworkExport)
 //
 // @Response 200 text/event-stream  SSE progress events
+// @Response 423 application/json   Tab is locked
 func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Request) {
 	if err := h.ensureChrome(); err != nil {
 		httpx.Error(w, 500, fmt.Errorf("chrome initialization: %w", err))
@@ -221,6 +270,14 @@ func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Requ
 	if _, ok := h.enforceCurrentTabDomainPolicy(w, r, tabCtx, resolvedTabID); !ok {
 		return
 	}
+
+	owner := resolveOwner(r, "")
+	if err := h.enforceTabLease(resolvedTabID, owner); err != nil {
+		httpx.ErrorCode(w, http.StatusLocked, "tab_locked", err.Error(), false, nil)
+		return
+	}
+
+	h.recordReadRequest(r, "network-export-stream", resolvedTabID)
 
 	formatName := r.URL.Query().Get("format")
 	if formatName == "" {
@@ -253,16 +310,32 @@ func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Requ
 	}
 
 	includeBody := r.URL.Query().Get("body") == "true"
+	redactHeaders := r.URL.Query().Get("redact") != "false"
 	filter := parseNetworkFilter(r)
 
-	// Open file
-	dir := filepath.Join(h.Config.StateDir, "exports")
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	// Path safety (#1)
+	exportDir := filepath.Join(h.Config.StateDir, "exports")
+	if err := os.MkdirAll(exportDir, 0750); err != nil {
 		httpx.Error(w, 500, fmt.Errorf("create dir: %w", err))
 		return
 	}
-	finalPath := filepath.Join(dir, filepath.Base(userPath))
-	f, err := os.OpenFile(finalPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+
+	safeName := filepath.Base(userPath)
+	safePath, err := httpx.SafeCreatePath(exportDir, safeName)
+	if err != nil {
+		httpx.Error(w, 400, fmt.Errorf("invalid path: %w", err))
+		return
+	}
+	absBase, _ := filepath.Abs(exportDir)
+	absPath, err := filepath.Abs(safePath)
+	if err != nil || !strings.HasPrefix(absPath, absBase+string(filepath.Separator)) {
+		httpx.Error(w, 400, fmt.Errorf("path escapes export directory"))
+		return
+	}
+
+	// Write to temp file, rename on finish (#8)
+	tmpPath := absPath + ".tmp"
+	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		httpx.Error(w, 500, fmt.Errorf("create file: %w", err))
 		return
@@ -271,6 +344,7 @@ func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Requ
 	enc := factory("PinchTab", h.version())
 	if err := enc.Start(f); err != nil {
 		f.Close()
+		os.Remove(tmpPath)
 		httpx.Error(w, 500, fmt.Errorf("start encoder: %w", err))
 		return
 	}
@@ -282,8 +356,9 @@ func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Requ
 	// SSE setup
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		enc.Finish()
+		_ = enc.Finish()
 		f.Close()
+		os.Remove(tmpPath)
 		httpx.Error(w, 500, fmt.Errorf("streaming not supported"))
 		return
 	}
@@ -293,24 +368,36 @@ func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 
+	// Clear write deadline for long-lived SSE (#7)
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Time{})
+
 	count := 0
 	keepalive := time.NewTicker(15 * time.Second)
 	defer keepalive.Stop()
 
+	finalize := func() {
+		_ = enc.Finish()
+		f.Close()
+		// Atomic rename on success (#8)
+		if count > 0 {
+			os.Rename(tmpPath, absPath)
+		} else {
+			os.Remove(tmpPath)
+		}
+	}
+
 	for {
 		select {
 		case <-r.Context().Done():
-			_ = enc.Finish()
-			f.Close()
-			fmt.Fprintf(w, "event: done\ndata: {\"entries\":%d,\"path\":%q}\n\n", count, finalPath)
-			flusher.Flush()
+			finalize()
+			// Don't write to ResponseWriter after client disconnect (#6)
 			return
 
 		case entry, ok := <-ch:
 			if !ok {
-				_ = enc.Finish()
-				f.Close()
-				fmt.Fprintf(w, "event: done\ndata: {\"entries\":%d,\"path\":%q}\n\n", count, finalPath)
+				finalize()
+				data, _ := json.Marshal(map[string]any{"entries": count, "path": absPath})
+				fmt.Fprintf(w, "event: done\ndata: %s\n\n", data)
 				flusher.Flush()
 				return
 			}
@@ -321,15 +408,23 @@ func (h *Handlers) HandleNetworkExportStream(w http.ResponseWriter, r *http.Requ
 			var b64 bool
 			if includeBody && entry.Finished && !entry.Failed {
 				body, b64, _ = nm.GetResponseBody(tabCtx, entry.RequestID)
+				if len(body) > maxExportBodyBytes {
+					body = ""
+					b64 = false
+				}
 			}
 			export := observe.NetworkEntryToExport(entry, body, b64)
+			if redactHeaders {
+				export.Request.Headers = observe.RedactSensitiveHeaders(export.Request.Headers)
+				export.Response.Headers = observe.RedactSensitiveHeaders(export.Response.Headers)
+			}
 			if err := enc.Encode(export); err != nil {
-				_ = enc.Finish()
-				f.Close()
+				finalize()
 				return
 			}
 			count++
-			fmt.Fprintf(w, "event: export\ndata: {\"entries\":%d,\"url\":%q}\n\n", count, truncateURL(entry.URL))
+			data, _ := json.Marshal(map[string]any{"entries": count, "url": safetruncateURL(entry.URL)})
+			fmt.Fprintf(w, "event: export\ndata: %s\n\n", data)
 			flusher.Flush()
 
 		case <-keepalive.C:
@@ -394,9 +489,17 @@ func (h *Handlers) version() string {
 	return "dev"
 }
 
-func truncateURL(u string) string {
-	if len(u) > 120 {
-		return u[:120]
+// safetruncateURL truncates at a valid UTF-8 boundary (#21).
+func safetruncateURL(u string) string {
+	const maxLen = 120
+	if len(u) <= maxLen {
+		return u
 	}
-	return u
+	for i := maxLen; i > 0; i-- {
+		if utf8.RuneStart(u[i]) {
+			return u[:i]
+		}
+	}
+	return u[:maxLen]
 }
+

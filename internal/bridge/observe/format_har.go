@@ -19,6 +19,7 @@ type harEncoder struct {
 	creator    harCreator
 	w          io.Writer
 	entryCount int
+	started    bool
 }
 
 type harCreator struct {
@@ -26,11 +27,12 @@ type harCreator struct {
 	Version string `json:"version"`
 }
 
-func (e *harEncoder) ContentType() string    { return "application/har+json" }
-func (e *harEncoder) FileExtension() string  { return ".har" }
+func (e *harEncoder) ContentType() string   { return "application/har+json" }
+func (e *harEncoder) FileExtension() string { return ".har" }
 
 func (e *harEncoder) Start(w io.Writer) error {
 	e.w = w
+	e.started = true
 	header := fmt.Sprintf(
 		`{"log":{"version":"1.2","creator":%s,"entries":[`,
 		mustMarshal(e.creator),
@@ -40,6 +42,9 @@ func (e *harEncoder) Start(w io.Writer) error {
 }
 
 func (e *harEncoder) Encode(entry ExportEntry) error {
+	if !e.started {
+		return fmt.Errorf("encoder not started")
+	}
 	if e.entryCount > 0 {
 		if _, err := io.WriteString(e.w, ","); err != nil {
 			return err
@@ -49,12 +54,17 @@ func (e *harEncoder) Encode(entry ExportEntry) error {
 	if err != nil {
 		return err
 	}
-	_, err = e.w.Write(data)
+	if _, err := e.w.Write(data); err != nil {
+		return err
+	}
 	e.entryCount++
-	return err
+	return nil
 }
 
 func (e *harEncoder) Finish() error {
+	if !e.started {
+		return fmt.Errorf("encoder not started")
+	}
 	_, err := io.WriteString(e.w, "]}}\n")
 	return err
 }
