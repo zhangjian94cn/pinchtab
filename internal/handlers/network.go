@@ -38,6 +38,9 @@ func parseBufferSize(r *http.Request) int {
 // @Response 404 application/json Tab not found
 func (h *Handlers) HandleNetwork(w http.ResponseWriter, r *http.Request) {
 	if err := h.ensureChrome(); err != nil {
+		if h.writeBridgeUnavailable(w, err) {
+			return
+		}
 		httpx.Error(w, 500, fmt.Errorf("chrome initialization: %w", err))
 		return
 	}
@@ -108,6 +111,9 @@ func (h *Handlers) HandleNetwork(w http.ResponseWriter, r *http.Request) {
 // @Response 404 application/json Request not found
 func (h *Handlers) HandleNetworkByID(w http.ResponseWriter, r *http.Request) {
 	if err := h.ensureChrome(); err != nil {
+		if h.writeBridgeUnavailable(w, err) {
+			return
+		}
 		httpx.Error(w, 500, fmt.Errorf("chrome initialization: %w", err))
 		return
 	}
@@ -220,6 +226,9 @@ func (h *Handlers) HandleNetworkStream(w http.ResponseWriter, r *http.Request) {
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Time{})
 
 	if err := h.ensureChrome(); err != nil {
+		if h.writeBridgeUnavailable(w, err) {
+			return
+		}
 		httpx.Error(w, 500, fmt.Errorf("chrome initialization: %w", err))
 		return
 	}

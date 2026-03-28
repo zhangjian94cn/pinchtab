@@ -32,9 +32,21 @@ func (h *Handlers) HandleHealth(w http.ResponseWriter, r *http.Request) {
 		httpx.JSON(w, 503, map[string]any{"status": "error", "reason": "bridge not initialized"})
 		return
 	}
+	if draining, retryAfter := h.bridgeRestartStatus(); draining {
+		seconds := int((retryAfter + time.Second - 1) / time.Second)
+		if seconds < 1 {
+			seconds = 1
+		}
+		w.Header().Set("Retry-After", fmt.Sprintf("%d", seconds))
+		httpx.JSON(w, http.StatusServiceUnavailable, map[string]any{"status": "draining", "retryAfterSeconds": seconds})
+		return
+	}
 
 	// Ensure Chrome is initialized before checking health
 	if err := h.ensureChrome(); err != nil {
+		if h.writeBridgeUnavailable(w, err) {
+			return
+		}
 		httpx.JSON(w, 503, map[string]any{"status": "error", "reason": fmt.Sprintf("chrome initialization failed: %v", err)})
 		return
 	}
@@ -64,6 +76,9 @@ func (h *Handlers) HandleHealth(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleEnsureChrome(w http.ResponseWriter, r *http.Request) {
 	// Ensure Chrome is initialized for this instance
 	if err := h.ensureChrome(); err != nil {
+		if h.writeBridgeUnavailable(w, err) {
+			return
+		}
 		httpx.Error(w, 500, fmt.Errorf("chrome initialization failed: %w", err))
 		return
 	}
@@ -126,6 +141,15 @@ func (h *Handlers) HandleTabs(w http.ResponseWriter, r *http.Request) {
 	// Guard against nil Bridge
 	if h.Bridge == nil {
 		httpx.Error(w, 503, fmt.Errorf("bridge not initialized"))
+		return
+	}
+	if draining, retryAfter := h.bridgeRestartStatus(); draining {
+		seconds := int((retryAfter + time.Second - 1) / time.Second)
+		if seconds < 1 {
+			seconds = 1
+		}
+		w.Header().Set("Retry-After", fmt.Sprintf("%d", seconds))
+		httpx.ErrorCode(w, http.StatusServiceUnavailable, "browser_draining", bridge.ErrBrowserDraining.Error(), true, map[string]any{"retryAfterSeconds": seconds})
 		return
 	}
 

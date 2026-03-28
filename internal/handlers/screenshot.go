@@ -23,6 +23,9 @@ import (
 func (h *Handlers) HandleScreenshot(w http.ResponseWriter, r *http.Request) {
 	// Ensure Chrome is initialized
 	if err := h.ensureChrome(); err != nil {
+		if h.writeBridgeUnavailable(w, err) {
+			return
+		}
 		httpx.Error(w, 500, fmt.Errorf("chrome initialization: %w", err))
 		return
 	}

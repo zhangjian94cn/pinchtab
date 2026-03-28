@@ -352,6 +352,8 @@ type MockBridge struct {
 	ensureChromeCalled bool
 	ensureChromeErr    string
 	currentTabID       string
+	draining           bool
+	retryAfter         time.Duration
 }
 
 func (m *MockBridge) ListTargets() ([]*target.Info, error) {
@@ -429,6 +431,10 @@ func (m *MockBridge) RestartBrowser(cfg *config.RuntimeConfig) error {
 	return nil
 }
 
+func (m *MockBridge) RestartStatus() (bool, time.Duration) {
+	return m.draining, m.retryAfter
+}
+
 func (m *MockBridge) StealthStatus() *stealth.Status {
 	return &stealth.Status{
 		Level:         stealth.LevelLight,
@@ -496,6 +502,38 @@ func TestHandleHealth_Disconnected_Returns503(t *testing.T) {
 	h.HandleHealth(w, req)
 	if w.Code != 503 {
 		t.Errorf("expected 503 for disconnected browser, got %d", w.Code)
+	}
+}
+
+func TestHandleHealth_Draining_Returns503WithRetryAfter(t *testing.T) {
+	mb := &MockBridge{draining: true, retryAfter: 1500 * time.Millisecond}
+	h := New(mb, &config.RuntimeConfig{}, nil, nil, nil)
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+
+	h.HandleHealth(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", w.Code)
+	}
+	if got := w.Header().Get("Retry-After"); got != "2" {
+		t.Fatalf("Retry-After = %q, want 2", got)
+	}
+}
+
+func TestHandleTabs_Draining_Returns503WithRetryAfter(t *testing.T) {
+	mb := &MockBridge{draining: true, retryAfter: time.Second}
+	h := New(mb, &config.RuntimeConfig{}, nil, nil, nil)
+	req := httptest.NewRequest("GET", "/tabs", nil)
+	w := httptest.NewRecorder()
+
+	h.HandleTabs(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", w.Code)
+	}
+	if got := w.Header().Get("Retry-After"); got != "1" {
+		t.Fatalf("Retry-After = %q, want 1", got)
 	}
 }
 

@@ -179,8 +179,26 @@ func (b *Bridge) ClearSavedState() {
 		return
 	}
 	path := filepath.Join(b.Config.StateDir, "sessions.json")
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		slog.Warn("clear saved state", "path", path, "err", err)
+	backupPath := path + ".bak"
+	if err := os.Remove(backupPath); err != nil && !os.IsNotExist(err) {
+		slog.Warn("clear saved state backup", "path", backupPath, "err", err)
+	}
+	if err := os.Rename(path, backupPath); err != nil {
+		if !os.IsNotExist(err) {
+			slog.Warn("backup saved state", "path", path, "backup", backupPath, "err", err)
+		}
+		return
+	}
+	slog.Info("backed up saved state", "path", path, "backup", backupPath)
+}
+
+func (b *Bridge) CleanupSavedStateBackup() {
+	if b == nil || b.Config == nil || b.Config.StateDir == "" {
+		return
+	}
+	backupPath := filepath.Join(b.Config.StateDir, "sessions.json.bak")
+	if err := os.Remove(backupPath); err != nil && !os.IsNotExist(err) {
+		slog.Warn("cleanup saved state backup", "path", backupPath, "err", err)
 	}
 }
 

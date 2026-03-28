@@ -106,11 +106,7 @@ func FetchAXTree(ctx context.Context) ([]RawAXNode, error) {
 }
 
 func fetchAXTreeForFrame(ctx context.Context, frameID string) ([]RawAXNode, error) {
-	params := map[string]any{
-		// pierce:true makes the accessibility tree traverse Shadow DOM boundaries,
-		// exposing content inside shadow roots (issue #381).
-		"pierce": true,
-	}
+	params := map[string]any{}
 	if frameID != "" {
 		params["frameId"] = frameID
 	}

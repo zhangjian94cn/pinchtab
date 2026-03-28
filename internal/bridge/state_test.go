@@ -238,3 +238,43 @@ func TestRetryRemove_Success(t *testing.T) {
 		t.Error("expected file to be removed")
 	}
 }
+
+func TestClearSavedState_BackupsSessionsFile(t *testing.T) {
+	tmp := t.TempDir()
+	sessionsPath := filepath.Join(tmp, "sessions.json")
+	if err := os.WriteFile(sessionsPath, []byte(`{"tabs":[]}`), 0644); err != nil {
+		t.Fatalf("write sessions: %v", err)
+	}
+
+	b := newTestBridge()
+	b.Config = &config.RuntimeConfig{StateDir: tmp}
+	b.ClearSavedState()
+
+	if _, err := os.Stat(sessionsPath); !os.IsNotExist(err) {
+		t.Fatalf("expected sessions.json to be renamed away, got err=%v", err)
+	}
+	backupPath := sessionsPath + ".bak"
+	data, err := os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatalf("read backup: %v", err)
+	}
+	if string(data) != `{"tabs":[]}` {
+		t.Fatalf("backup contents = %q", string(data))
+	}
+}
+
+func TestCleanupSavedStateBackup_RemovesBackupFile(t *testing.T) {
+	tmp := t.TempDir()
+	backupPath := filepath.Join(tmp, "sessions.json.bak")
+	if err := os.WriteFile(backupPath, []byte(`{"tabs":[]}`), 0644); err != nil {
+		t.Fatalf("write backup: %v", err)
+	}
+
+	b := newTestBridge()
+	b.Config = &config.RuntimeConfig{StateDir: tmp}
+	b.CleanupSavedStateBackup()
+
+	if _, err := os.Stat(backupPath); !os.IsNotExist(err) {
+		t.Fatalf("expected backup to be removed, got err=%v", err)
+	}
+}

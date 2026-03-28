@@ -55,9 +55,11 @@ type Bridge struct {
 	fingerprintOverlays  map[string]bool
 	workerStealthTargets sync.Map
 
-	// Lazy initialization
+	// Lazy initialization / restart coordination
 	initMu      sync.Mutex
 	initialized bool
+	draining    bool
+	drainUntil  time.Time
 
 	// Temp profile cleanup: directories created as fallback when profile lock fails.
 	// These are removed on Cleanup() to prevent Chrome process/disk leaks.
@@ -100,6 +102,22 @@ func New(allocCtx, browserCtx context.Context, cfg *config.RuntimeConfig) *Bridg
 
 func (b *Bridge) quietStealthObservers() bool {
 	return b != nil && b.Config != nil && stealth.NormalizeLevel(b.Config.StealthLevel) == stealth.LevelFull
+}
+
+func (b *Bridge) RestartStatus() (bool, time.Duration) {
+	if b == nil {
+		return false, 0
+	}
+	b.initMu.Lock()
+	defer b.initMu.Unlock()
+	if !b.draining {
+		return false, 0
+	}
+	remaining := time.Until(b.drainUntil)
+	if remaining < 0 {
+		remaining = 0
+	}
+	return true, remaining
 }
 
 func (b *Bridge) injectStealth(ctx context.Context) {
@@ -204,6 +222,10 @@ func (b *Bridge) ClearErrorLogs(tabID string) {
 func (b *Bridge) EnsureChrome(cfg *config.RuntimeConfig) error {
 	b.initMu.Lock()
 	defer b.initMu.Unlock()
+
+	if b.draining {
+		return ErrBrowserDraining
+	}
 
 	if b.initialized && b.BrowserCtx != nil {
 		// Check if browser context is still alive
@@ -310,6 +332,16 @@ func (b *Bridge) RestartBrowser(cfg *config.RuntimeConfig) error {
 		return fmt.Errorf("runtime config is required")
 	}
 
+	const drainWindow = 2 * time.Second
+
+	b.initMu.Lock()
+	b.draining = true
+	b.drainUntil = time.Now().Add(drainWindow)
+	b.initMu.Unlock()
+
+	slog.Info("browser soft restart: draining requests before restart", "drain_window", drainWindow)
+	time.Sleep(drainWindow)
+
 	b.initMu.Lock()
 
 	if b.BrowserCancel != nil {
@@ -354,11 +386,7 @@ func (b *Bridge) RestartBrowser(cfg *config.RuntimeConfig) error {
 	b.TabManager = nil
 	b.stealthLaunchMode = stealth.LaunchModeUninitialized
 
-	if b.LogStore == nil {
-		b.LogStore = NewConsoleLogStore(1000)
-	} else {
-		b.LogStore = NewConsoleLogStore(1000)
-	}
+	b.LogStore = NewConsoleLogStore(1000)
 	b.netMonitor = NewNetworkMonitor(DefaultNetworkBufferSize)
 	if cfg.NetworkBufferSize > 0 {
 		b.netMonitor = NewNetworkMonitor(cfg.NetworkBufferSize)
@@ -375,8 +403,15 @@ func (b *Bridge) RestartBrowser(cfg *config.RuntimeConfig) error {
 	b.Actions = nil
 	b.InitActionRegistry()
 
+	b.draining = false
+	b.drainUntil = time.Time{}
 	b.initMu.Unlock()
-	return b.EnsureChrome(cfg)
+
+	if err := b.EnsureChrome(cfg); err != nil {
+		return err
+	}
+	b.CleanupSavedStateBackup()
+	return nil
 }
 
 func (b *Bridge) Cleanup() {
