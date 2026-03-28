@@ -524,6 +524,9 @@ func parseNetworkFilter(r *http.Request) bridge.NetworkFilter {
 }
 
 func (h *Handlers) version() string {
+	if h.Version != "" {
+		return h.Version
+	}
 	return "dev"
 }
 

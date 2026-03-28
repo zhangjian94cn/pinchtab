@@ -29,6 +29,7 @@ type Handlers struct {
 	Recovery     *recovery.RecoveryEngine
 	Router       *engine.Router // optional; nil ⇒ chrome-only
 	IDPIGuard    idpi.Guard
+	Version      string // build version injected at startup
 	clipboard    clipboardStore
 }
 
