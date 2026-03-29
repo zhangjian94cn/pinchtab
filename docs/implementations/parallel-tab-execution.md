@@ -206,8 +206,9 @@ API requests directly without a separate daemon layer.
 
 **Explicit resource limits** — Agent Browser manages resources implicitly through
 Playwright's browser lifecycle. PinchTab provides explicit, configurable control:
-`PINCHTAB_MAX_PARALLEL_TABS` sets the semaphore capacity, and `DefaultMaxParallel()`
-auto-scales based on `min(runtime.NumCPU()*2, 8)`. This is critical for
+`instanceDefaults.maxParallelTabs` in `config.json` sets the semaphore capacity,
+and `DefaultMaxParallel()` auto-scales based on `min(runtime.NumCPU()*2, 8)`.
+This is critical for
 constrained devices (Raspberry Pi with 4 cores → maxParallel=8) and prevents
 runaway resource usage on large servers (32 cores → still capped at 8).
 
@@ -340,10 +341,14 @@ This ensures safe operation on constrained devices:
 
 ### Configuration
 
-Override the default via environment variable:
+Override the default in `config.json`:
 
-```bash
-export PINCHTAB_MAX_PARALLEL_TABS=4
+```json
+{
+  "instanceDefaults": {
+    "maxParallelTabs": 4
+  }
+}
 ```
 
 Set to `0` (or omit) to use the auto-detected default.
@@ -399,7 +404,7 @@ concurrently without blocking each other.
 - Tab3 → `https://www.bing.com`
 
 **Test steps:**
-1. Start PinchTab with `PINCHTAB_MAX_PARALLEL_TABS=4`.
+1. Start PinchTab with `instanceDefaults.maxParallelTabs` set to `4` in `config.json`.
 2. Open three tabs via `/navigate` targeting each search engine.
 3. On each tab concurrently: use `/find` to locate the search input, `/action`
    to type a query ("parallel execution test"), and `/action` to submit.
@@ -591,7 +596,7 @@ simultaneously to different websites.
 10. `https://techcrunch.com`
 
 **Test steps:**
-1. Set `PINCHTAB_MAX_PARALLEL_TABS=8`.
+1. Set `instanceDefaults.maxParallelTabs` to `8` in `config.json`.
 2. Issue 10 concurrent `/navigate` requests (one per site).
 3. Wait for all navigations to complete.
 4. Issue `/snapshot` on each tab.
@@ -637,16 +642,20 @@ blocks on the semaphore channel and resumes when capacity is freed. The
 
 ### Test 6 — Resource Limit Test
 
-**Objective:** Verify that the `PINCHTAB_MAX_PARALLEL_TABS` environment variable
+**Objective:** Verify that `instanceDefaults.maxParallelTabs` in `config.json`
 correctly limits concurrent tab execution.
 
 **Configuration:**
-```bash
-export PINCHTAB_MAX_PARALLEL_TABS=2
+```json
+{
+  "instanceDefaults": {
+    "maxParallelTabs": 2
+  }
+}
 ```
 
 **Test steps:**
-1. Start PinchTab with `PINCHTAB_MAX_PARALLEL_TABS=2`.
+1. Start PinchTab with `instanceDefaults.maxParallelTabs` set to `2` in `config.json`.
 2. Open 5 tabs concurrently, each navigating to a different site.
 3. Monitor logs to verify only 2 tabs execute at any given time.
 4. Verify all 5 complete eventually.
@@ -659,7 +668,7 @@ export PINCHTAB_MAX_PARALLEL_TABS=2
 **Observed results:**
 
 ```
-[2026-03-05T14:18:00Z] INFO  config: PINCHTAB_MAX_PARALLEL_TABS=2
+[2026-03-05T14:18:00Z] INFO  config: instanceDefaults.maxParallelTabs=2
 [2026-03-05T14:18:00Z] INFO  tab_executor: created  maxParallel=2
 [2026-03-05T14:18:01Z] INFO  tab_executor: semaphore acquired  tabId=tab_01 (1/2 slots)
 [2026-03-05T14:18:01Z] INFO  tab_executor: semaphore acquired  tabId=tab_02 (2/2 slots)
@@ -682,7 +691,7 @@ queued and executed only when prior tabs finished.
 
 **Validation:** The `peakConcurrent=2` metric confirms that no more than 2 tabs
 ever held semaphore slots simultaneously, exactly matching the configured
-`PINCHTAB_MAX_PARALLEL_TABS=2`. The FIFO-style completion order
+`instanceDefaults.maxParallelTabs=2`. The FIFO-style completion order
 (tab_01→tab_03→tab_05, tab_02→tab_04) confirms fair scheduling.
 
 ---
@@ -821,12 +830,16 @@ execution across tabs with sequential ordering within each.
 semaphore is saturated and new requests cannot be served.
 
 **Configuration:**
-```bash
-export PINCHTAB_MAX_PARALLEL_TABS=1
+```json
+{
+  "instanceDefaults": {
+    "maxParallelTabs": 1
+  }
+}
 ```
 
 **Test steps:**
-1. Start PinchTab with `PINCHTAB_MAX_PARALLEL_TABS=1` (only 1 concurrent slot).
+1. Start PinchTab with `instanceDefaults.maxParallelTabs` set to `1` in `config.json` (only 1 concurrent slot).
 2. Start a long-running action on Tab1 (navigate to a slow page).
 3. Immediately send an action to Tab2 with a 2-second timeout.
 4. Verify Tab2 times out waiting for the semaphore while Tab1 continues.

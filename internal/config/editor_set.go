@@ -30,8 +30,10 @@ func SetConfigValue(fc *FileConfig, path string, value string) error {
 		return setMultiInstanceField(&fc.MultiInstance, field, value)
 	case "timeouts":
 		return setTimeoutsField(&fc.Timeouts, field, value)
+	case "sessions":
+		return setSessionsField(&fc.Sessions, field, value)
 	default:
-		return fmt.Errorf("unknown section %q (valid: server, browser, instanceDefaults, security, profiles, multiInstance, timeouts)", section)
+		return fmt.Errorf("unknown section %q (valid: server, browser, instanceDefaults, security, profiles, multiInstance, timeouts, sessions)", section)
 	}
 }
 
@@ -79,6 +81,57 @@ func setBrowserField(b *BrowserConfig, field, value string) error {
 		b.ChromeExtraFlags = value
 	default:
 		return fmt.Errorf("unknown field browser.%s", field)
+	}
+	return nil
+}
+
+func setSessionsField(s *SessionsFileConfig, field, value string) error {
+	if strings.HasPrefix(field, "dashboard.") {
+		return setDashboardSessionField(&s.Dashboard, strings.TrimPrefix(field, "dashboard."), value)
+	}
+	return fmt.Errorf("unknown field sessions.%s", field)
+}
+
+func setDashboardSessionField(s *DashboardSessionFileConfig, field, value string) error {
+	switch field {
+	case "persist":
+		b, err := parseBool(value)
+		if err != nil {
+			return fmt.Errorf("sessions.dashboard.persist: %w", err)
+		}
+		s.Persist = &b
+	case "idleTimeoutSec":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("sessions.dashboard.idleTimeoutSec must be a number: %w", err)
+		}
+		s.IdleTimeoutSec = &n
+	case "maxLifetimeSec":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("sessions.dashboard.maxLifetimeSec must be a number: %w", err)
+		}
+		s.MaxLifetimeSec = &n
+	case "elevationWindowSec":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("sessions.dashboard.elevationWindowSec must be a number: %w", err)
+		}
+		s.ElevationWindowSec = &n
+	case "persistElevationAcrossRestart":
+		b, err := parseBool(value)
+		if err != nil {
+			return fmt.Errorf("sessions.dashboard.persistElevationAcrossRestart: %w", err)
+		}
+		s.PersistElevationAcrossRestart = &b
+	case "requireElevation":
+		b, err := parseBool(value)
+		if err != nil {
+			return fmt.Errorf("sessions.dashboard.requireElevation: %w", err)
+		}
+		s.RequireElevation = &b
+	default:
+		return fmt.Errorf("unknown field sessions.dashboard.%s", field)
 	}
 	return nil
 }

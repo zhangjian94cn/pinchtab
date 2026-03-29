@@ -159,7 +159,7 @@ export class Pinchtab {
       throw new Error(
         `Pinchtab binary not found at ${binaryPath}.\n` +
           `Please run: npm rebuild pinchtab\n` +
-          `Or set PINCHTAB_BINARY_PATH=/path/to/binary`
+          `Or pass an explicit path to pinch.start('/path/to/pinchtab')`
       );
     }
 

@@ -35,6 +35,12 @@ func DefaultFileConfig() FileConfig {
 	activityEnabled := true
 	activitySessionIdleSec := 1800
 	activityRetentionDays := 1
+	dashboardSessionPersist := true
+	dashboardSessionIdleSec := 7 * 24 * 60 * 60
+	dashboardSessionMaxLifetimeSec := 7 * 24 * 60 * 60
+	dashboardSessionElevationWindowSec := 15 * 60
+	dashboardSessionPersistElevationAcrossRestart := false
+	dashboardSessionRequireElevation := false
 	return FileConfig{
 		ConfigVersion: CurrentConfigVersion,
 		Server: ServerConfig{
@@ -108,6 +114,16 @@ func DefaultFileConfig() FileConfig {
 				RetentionDays:  &activityRetentionDays,
 			},
 		},
+		Sessions: SessionsFileConfig{
+			Dashboard: DashboardSessionFileConfig{
+				Persist:                       &dashboardSessionPersist,
+				IdleTimeoutSec:                &dashboardSessionIdleSec,
+				MaxLifetimeSec:                &dashboardSessionMaxLifetimeSec,
+				ElevationWindowSec:            &dashboardSessionElevationWindowSec,
+				PersistElevationAcrossRestart: &dashboardSessionPersistElevationAcrossRestart,
+				RequireElevation:              &dashboardSessionRequireElevation,
+			},
+		},
 	}
 }
 
@@ -122,6 +138,7 @@ type fileConfigJSON struct {
 	Timeouts         timeoutsConfigJSON          `json:"timeouts"`
 	Scheduler        schedulerFileConfigJSON     `json:"scheduler"`
 	Observability    observabilityFileConfigJSON `json:"observability"`
+	Sessions         sessionsFileConfigJSON      `json:"sessions"`
 	AutoSolver       autoSolverFileConfigJSON    `json:"autoSolver,omitempty"`
 }
 
@@ -241,6 +258,19 @@ type activityConfigJSON struct {
 	Enabled        *bool `json:"enabled"`
 	SessionIdleSec *int  `json:"sessionIdleSec"`
 	RetentionDays  *int  `json:"retentionDays"`
+}
+
+type sessionsFileConfigJSON struct {
+	Dashboard dashboardSessionConfigJSON `json:"dashboard"`
+}
+
+type dashboardSessionConfigJSON struct {
+	Persist                       *bool `json:"persist,omitempty"`
+	IdleTimeoutSec                *int  `json:"idleTimeoutSec,omitempty"`
+	MaxLifetimeSec                *int  `json:"maxLifetimeSec,omitempty"`
+	ElevationWindowSec            *int  `json:"elevationWindowSec,omitempty"`
+	PersistElevationAcrossRestart *bool `json:"persistElevationAcrossRestart,omitempty"`
+	RequireElevation              *bool `json:"requireElevation,omitempty"`
 }
 
 type autoSolverFileConfigJSON struct {
@@ -371,6 +401,16 @@ func (fc FileConfig) MarshalJSON() ([]byte, error) {
 				RetentionDays:  fc.Observability.Activity.RetentionDays,
 			},
 		},
+		Sessions: sessionsFileConfigJSON{
+			Dashboard: dashboardSessionConfigJSON{
+				Persist:                       fc.Sessions.Dashboard.Persist,
+				IdleTimeoutSec:                fc.Sessions.Dashboard.IdleTimeoutSec,
+				MaxLifetimeSec:                fc.Sessions.Dashboard.MaxLifetimeSec,
+				ElevationWindowSec:            fc.Sessions.Dashboard.ElevationWindowSec,
+				PersistElevationAcrossRestart: fc.Sessions.Dashboard.PersistElevationAcrossRestart,
+				RequireElevation:              fc.Sessions.Dashboard.RequireElevation,
+			},
+		},
 		AutoSolver: autoSolverFileConfigJSON{
 			Enabled:     fc.AutoSolver.Enabled,
 			MaxAttempts: fc.AutoSolver.MaxAttempts,
@@ -422,6 +462,12 @@ func FileConfigFromRuntime(cfg *RuntimeConfig) FileConfig {
 	activityEnabled := cfg.Observability.Activity.Enabled
 	activitySessionIdleSec := cfg.Observability.Activity.SessionIdleSec
 	activityRetentionDays := cfg.Observability.Activity.RetentionDays
+	dashboardSessionPersist := cfg.Sessions.Dashboard.Persist
+	dashboardSessionIdleSec := int(cfg.Sessions.Dashboard.IdleTimeout / time.Second)
+	dashboardSessionMaxLifetimeSec := int(cfg.Sessions.Dashboard.MaxLifetime / time.Second)
+	dashboardSessionElevationWindowSec := int(cfg.Sessions.Dashboard.ElevationWindow / time.Second)
+	dashboardSessionPersistElevationAcrossRestart := cfg.Sessions.Dashboard.PersistElevationAcrossRestart
+	dashboardSessionRequireElevation := cfg.Sessions.Dashboard.RequireElevation
 
 	mode := "headless"
 	if !cfg.Headless {
@@ -517,6 +563,16 @@ func FileConfigFromRuntime(cfg *RuntimeConfig) FileConfig {
 				RetentionDays:  &activityRetentionDays,
 			},
 		},
+		Sessions: SessionsFileConfig{
+			Dashboard: DashboardSessionFileConfig{
+				Persist:                       &dashboardSessionPersist,
+				IdleTimeoutSec:                &dashboardSessionIdleSec,
+				MaxLifetimeSec:                &dashboardSessionMaxLifetimeSec,
+				ElevationWindowSec:            &dashboardSessionElevationWindowSec,
+				PersistElevationAcrossRestart: &dashboardSessionPersistElevationAcrossRestart,
+				RequireElevation:              &dashboardSessionRequireElevation,
+			},
+		},
 	}
 
 	return fc
@@ -607,7 +663,7 @@ func isLegacyConfig(data []byte) bool {
 	}
 
 	// If any new nested keys exist, it's new format
-	newKeys := []string{"server", "browser", "instanceDefaults", "profiles", "multiInstance", "security", "attach", "timeouts"}
+	newKeys := []string{"server", "browser", "instanceDefaults", "profiles", "multiInstance", "security", "attach", "timeouts", "sessions"}
 	for _, key := range newKeys {
 		if _, has := probe[key]; has {
 			return false

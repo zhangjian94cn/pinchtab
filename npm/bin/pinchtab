@@ -7,7 +7,16 @@ const fs = require('fs');
 
 function getBinaryName() {
   const platform = process.platform;
-  const arch = (process.arch === 'arm64' || process.arch === 'aarch64') ? 'arm64' : 'amd64';
+  let arch;
+  if (process.arch === 'x64') {
+    arch = 'amd64';
+  } else if (process.arch === 'arm64') {
+    arch = 'arm64';
+  } else {
+    throw new Error(
+      `Unsupported architecture: ${process.arch}. Only x64 (amd64) and arm64 are supported.`
+    );
+  }
 
   if (platform === 'darwin') {
     return `pinchtab-darwin-${arch}`;
@@ -27,11 +36,6 @@ function getVersion() {
 }
 
 function getBinaryPath() {
-  // Allow override via environment variable (for Docker, custom builds)
-  if (process.env.PINCHTAB_BINARY_PATH) {
-    return process.env.PINCHTAB_BINARY_PATH;
-  }
-
   // Try version-specific path first: ~/.pinchtab/bin/0.7.0/pinchtab-darwin-arm64
   const version = getVersion();
   const versionedPath = path.join(os.homedir(), '.pinchtab', 'bin', version, getBinaryName());
@@ -106,8 +110,6 @@ if (!fs.existsSync(binaryPath)) {
   console.error(`  ${binaryPath}`);
   console.error('\nTo fix this, run:');
   console.error('  npm rebuild pinchtab');
-  console.error('\nOr set a custom binary path:');
-  console.error(`  PINCHTAB_BINARY_PATH=/path/to/binary pinchtab`);
   process.exit(1);
 }
 

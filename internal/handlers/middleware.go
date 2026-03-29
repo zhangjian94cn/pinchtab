@@ -121,7 +121,7 @@ func AuthMiddlewareWithSessions(cfg *config.RuntimeConfig, sessions *authn.Sessi
 				httpx.ErrorCode(w, 403, "header_auth_required", "authorization header required for this endpoint", false, nil)
 				return
 			}
-			if cookieElevationRequired(r) && !sessions.IsElevated(creds.Value, token) {
+			if cookieElevationRequired(r, cfg) && !sessions.IsElevated(creds.Value, token) {
 				authn.AuditWarn(r, "auth.elevation_required", "elevationWindowSec", int(sessions.ElevationWindow().Seconds()))
 				httpx.ErrorCode(w, 403, "elevation_required", "re-enter API token to continue", false, map[string]any{
 					"elevationWindowSec": int(sessions.ElevationWindow().Seconds()),
@@ -208,7 +208,10 @@ func cookieAuthAllowed(r *http.Request) bool {
 	return false
 }
 
-func cookieElevationRequired(r *http.Request) bool {
+func cookieElevationRequired(r *http.Request, cfg *config.RuntimeConfig) bool {
+	if cfg == nil || !cfg.Sessions.Dashboard.RequireElevation {
+		return false
+	}
 	path := strings.TrimSpace(r.URL.Path)
 	switch r.Method {
 	case http.MethodPut:

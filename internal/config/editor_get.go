@@ -31,8 +31,10 @@ func GetConfigValue(fc *FileConfig, path string) (string, error) {
 		return getMultiInstanceField(&fc.MultiInstance, field)
 	case "timeouts":
 		return getTimeoutsField(&fc.Timeouts, field)
+	case "sessions":
+		return getSessionsField(&fc.Sessions, field)
 	default:
-		return "", fmt.Errorf("unknown section %q (valid: server, browser, instanceDefaults, security, profiles, multiInstance, timeouts)", section)
+		return "", fmt.Errorf("unknown section %q (valid: server, browser, instanceDefaults, security, profiles, multiInstance, timeouts, sessions)", section)
 	}
 }
 
@@ -65,6 +67,32 @@ func getBrowserField(b *BrowserConfig, field string) (string, error) {
 		return b.ChromeExtraFlags, nil
 	default:
 		return "", fmt.Errorf("unknown field browser.%s", field)
+	}
+}
+
+func getSessionsField(s *SessionsFileConfig, field string) (string, error) {
+	if strings.HasPrefix(field, "dashboard.") {
+		return getDashboardSessionField(&s.Dashboard, strings.TrimPrefix(field, "dashboard."))
+	}
+	return "", fmt.Errorf("unknown field sessions.%s", field)
+}
+
+func getDashboardSessionField(s *DashboardSessionFileConfig, field string) (string, error) {
+	switch field {
+	case "persist":
+		return formatBoolPtr(s.Persist), nil
+	case "idleTimeoutSec":
+		return formatIntPtr(s.IdleTimeoutSec), nil
+	case "maxLifetimeSec":
+		return formatIntPtr(s.MaxLifetimeSec), nil
+	case "elevationWindowSec":
+		return formatIntPtr(s.ElevationWindowSec), nil
+	case "persistElevationAcrossRestart":
+		return formatBoolPtr(s.PersistElevationAcrossRestart), nil
+	case "requireElevation":
+		return formatBoolPtr(s.RequireElevation), nil
+	default:
+		return "", fmt.Errorf("unknown field sessions.dashboard.%s", field)
 	}
 }
 

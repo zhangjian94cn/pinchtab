@@ -1,7 +1,6 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, Input, Modal } from "../components/atoms";
-import { credentialUsername, storeTokenCredential } from "../services/auth";
 import * as api from "../services/api";
 import { useAppStore } from "../stores/useAppStore";
 import type {
@@ -17,6 +16,7 @@ import { OrchestrationSettingsSection } from "./settings/OrchestrationSettingsSe
 import { ProfilesSettingsSection } from "./settings/ProfilesSettingsSection";
 import { SecurityIdpiSettingsSection } from "./settings/SecurityIdpiSettingsSection";
 import { SecuritySettingsSection } from "./settings/SecuritySettingsSection";
+import { AutoSolverSettingsSection } from "./settings/AutoSolverSettingsSection";
 import {
   backendSaveNotice,
   sections,
@@ -116,6 +116,14 @@ function renderActiveSection(
           updateBackendSection={options.updateBackendSection}
         />
       );
+    case "autosolver":
+      return (
+        <AutoSolverSettingsSection
+          backendConfig={options.backendConfig}
+          backendState={options.backendState}
+          updateBackendSection={options.updateBackendSection}
+        />
+      );
   }
 }
 
@@ -139,7 +147,6 @@ export default function SettingsPage() {
   const [elevationToken, setElevationToken] = useState("");
   const [elevationError, setElevationError] = useState("");
   const [elevating, setElevating] = useState(false);
-  const savedCredentialUsername = useMemo(() => credentialUsername(), []);
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -307,7 +314,6 @@ export default function SettingsPage() {
 
     try {
       await api.elevate(elevationToken);
-      await storeTokenCredential(elevationToken, event.currentTarget);
       setPendingElevatedAction(null);
       setElevationToken("");
 
@@ -402,7 +408,7 @@ export default function SettingsPage() {
         <form
           id="settings-elevation-form"
           className="space-y-4"
-          autoComplete="on"
+          autoComplete="off"
           onSubmit={handleElevationSubmit}
         >
           <p className="leading-6 text-text-muted">
@@ -410,22 +416,10 @@ export default function SettingsPage() {
             elevated session stays active briefly so you do not need to repeat
             this for every admin action.
           </p>
-          <input
-            id="settings-elevation-username"
-            type="text"
-            name="username"
-            autoComplete="username"
-            value={savedCredentialUsername}
-            readOnly
-            tabIndex={-1}
-            aria-hidden="true"
-            className="sr-only"
-          />
           <Input
             id="settings-elevation-password"
             type="password"
-            name="password"
-            autoComplete="current-password"
+            autoComplete="off"
             label="API token"
             placeholder="Paste API token"
             value={elevationToken}

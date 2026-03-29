@@ -214,6 +214,17 @@ Current nested file-config shape:
     "shutdownSec": 10,
     "waitNavMs": 1000
   },
+  "autoSolver": {
+    "enabled": false,
+    "maxAttempts": 8,
+    "solvers": ["cloudflare", "semantic", "capsolver", "twocaptcha"],
+    "llmProvider": "",
+    "llmFallback": false,
+    "external": {
+      "capsolverKey": "",
+      "twoCaptchaKey": ""
+    }
+  },
   "scheduler": {
     "enabled": false,
     "strategy": "fair-fifo",
@@ -234,6 +245,13 @@ Current nested file-config shape:
 }
 ```
 
+`autoSolver.external` is config-file-only. Capsolver and 2Captcha credentials
+are stored there.
+
+The dashboard Settings page exposes the non-secret AutoSolver settings and
+shows the active config file path. Provider keys remain managed directly in the
+config file.
+
 `browser.extraFlags` is validated and sanitized. It is only for user-safe Chrome flags that do not weaken browser security and do not override PinchTab-owned launch behavior.
 
 Rejected examples include:
@@ -253,7 +271,7 @@ Use the dedicated config fields instead:
 - `browser.extensionPaths` for extension loading
 - `browser.remoteDebuggingPort` for the remote debugging port
 
-For Linux container compatibility, use the runtime-managed path instead of `browser.extraFlags`. PinchTab enables `--no-sandbox` automatically when needed, and you can force that compatibility mode with `PINCHTAB_CHROME_NO_SANDBOX=1`.
+For Linux container compatibility, use the runtime-managed path instead of `browser.extraFlags`. PinchTab enables `--no-sandbox` automatically when needed.
 
 ## Sections
 

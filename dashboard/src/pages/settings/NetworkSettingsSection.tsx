@@ -121,6 +121,90 @@ export function NetworkSettingsSection({
         </label>
       </SettingRow>
       <SettingRow
+        label="Persist dashboard sessions"
+        description="Keep dashboard login sessions across server restarts. Disable this if you want every restart to force a fresh login."
+      >
+        <label className="flex items-center justify-end gap-3 text-sm text-text-secondary">
+          <input
+            type="checkbox"
+            checked={backendConfig.sessions.dashboard.persist}
+            onChange={(e) =>
+              updateBackendSection("sessions", {
+                dashboard: {
+                  ...backendConfig.sessions.dashboard,
+                  persist: e.target.checked,
+                },
+              })
+            }
+            className="accent-primary"
+          />
+          {backendConfig.sessions.dashboard.persist ? "Enabled" : "Disabled"}
+        </label>
+      </SettingRow>
+      <SettingRow
+        label="Session idle timeout"
+        description="How long an unused dashboard session stays valid. This is stored in seconds in config."
+      >
+        <input
+          type="number"
+          min={60}
+          step={60}
+          value={backendConfig.sessions.dashboard.idleTimeoutSec}
+          onChange={(e) =>
+            updateBackendSection("sessions", {
+              dashboard: {
+                ...backendConfig.sessions.dashboard,
+                idleTimeoutSec: Number(e.target.value),
+              },
+            })
+          }
+          className={fieldClass}
+        />
+      </SettingRow>
+      <SettingRow
+        label="Session max lifetime"
+        description="Absolute lifetime for a dashboard session before it must be re-created, even if active."
+      >
+        <input
+          type="number"
+          min={60}
+          step={60}
+          value={backendConfig.sessions.dashboard.maxLifetimeSec}
+          onChange={(e) =>
+            updateBackendSection("sessions", {
+              dashboard: {
+                ...backendConfig.sessions.dashboard,
+                maxLifetimeSec: Number(e.target.value),
+              },
+            })
+          }
+          className={fieldClass}
+        />
+      </SettingRow>
+      <SettingRow
+        label="Require elevation for config saves"
+        description="Ask for API token re-entry before saving backend config changes. Disabled by default."
+      >
+        <label className="flex items-center justify-end gap-3 text-sm text-text-secondary">
+          <input
+            type="checkbox"
+            checked={backendConfig.sessions.dashboard.requireElevation}
+            onChange={(e) =>
+              updateBackendSection("sessions", {
+                dashboard: {
+                  ...backendConfig.sessions.dashboard,
+                  requireElevation: e.target.checked,
+                },
+              })
+            }
+            className="accent-primary"
+          />
+          {backendConfig.sessions.dashboard.requireElevation
+            ? "Enabled"
+            : "Disabled"}
+        </label>
+      </SettingRow>
+      <SettingRow
         label="Allow attach"
         description="Permit attaching PinchTab to externally managed Chrome sessions."
       >

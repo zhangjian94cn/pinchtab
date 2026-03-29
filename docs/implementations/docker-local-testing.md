@@ -111,11 +111,3 @@ docker exec pinchtab sh -lc 'cat /data/.config/pinchtab/config.json'
 ## Current Caveat
 
 The Docker runtime path owns `--no-sandbox` compatibility now. Do not put it in `browser.extraFlags`.
-
-If Chromium still fails to launch in an unusual Linux container environment, set:
-
-```bash
-PINCHTAB_CHROME_NO_SANDBOX=1
-```
-
-Use that environment variable instead of saving `--no-sandbox` into config.

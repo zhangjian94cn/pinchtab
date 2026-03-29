@@ -61,6 +61,19 @@ export interface BackendServerConfig {
   trustProxyHeaders: boolean;
 }
 
+export interface BackendDashboardSessionConfig {
+  persist: boolean;
+  idleTimeoutSec: number;
+  maxLifetimeSec: number;
+  elevationWindowSec: number;
+  persistElevationAcrossRestart: boolean;
+  requireElevation: boolean;
+}
+
+export interface BackendSessionsConfig {
+  dashboard: BackendDashboardSessionConfig;
+}
+
 export interface BackendBrowserConfig {
   version: string;
   binary: string;
@@ -140,6 +153,14 @@ export interface BackendTimeoutsConfig {
   waitNavMs: number;
 }
 
+export interface BackendAutoSolverConfig {
+  enabled: boolean;
+  maxAttempts: number;
+  solvers: string[];
+  llmProvider: string;
+  llmFallback: boolean;
+}
+
 export interface BackendConfig {
   server: BackendServerConfig;
   browser: BackendBrowserConfig;
@@ -148,6 +169,8 @@ export interface BackendConfig {
   profiles: BackendProfilesConfig;
   multiInstance: BackendMultiInstanceConfig;
   timeouts: BackendTimeoutsConfig;
+  sessions: BackendSessionsConfig;
+  autoSolver: BackendAutoSolverConfig;
 }
 
 export interface BackendConfigState {
@@ -228,6 +251,23 @@ export const defaultBackendConfig: BackendConfig = {
     shutdownSec: 10,
     waitNavMs: 1000,
   },
+  sessions: {
+    dashboard: {
+      persist: true,
+      idleTimeoutSec: 7 * 24 * 60 * 60,
+      maxLifetimeSec: 7 * 24 * 60 * 60,
+      elevationWindowSec: 15 * 60,
+      persistElevationAcrossRestart: false,
+      requireElevation: false,
+    },
+  },
+  autoSolver: {
+    enabled: false,
+    maxAttempts: 8,
+    solvers: ["cloudflare", "semantic", "capsolver", "twocaptcha"],
+    llmProvider: "",
+    llmFallback: false,
+  },
 };
 
 export function normalizeBackendConfig(
@@ -284,6 +324,20 @@ export function normalizeBackendConfig(
     timeouts: {
       ...defaultBackendConfig.timeouts,
       ...(input?.timeouts ?? {}),
+    },
+    sessions: {
+      ...defaultBackendConfig.sessions,
+      ...(input?.sessions ?? {}),
+      dashboard: {
+        ...defaultBackendConfig.sessions.dashboard,
+        ...(input?.sessions?.dashboard ?? {}),
+      },
+    },
+    autoSolver: {
+      ...defaultBackendConfig.autoSolver,
+      ...(input?.autoSolver ?? {}),
+      solvers:
+        input?.autoSolver?.solvers ?? defaultBackendConfig.autoSolver.solvers,
     },
   };
 }

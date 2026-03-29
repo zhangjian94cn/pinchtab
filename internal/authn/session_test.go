@@ -1,6 +1,7 @@
 package authn
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -70,5 +71,73 @@ func TestSessionManagerElevationWindow(t *testing.T) {
 	now = now.Add(16 * time.Minute)
 	if mgr.IsElevated(sessionID, "secret") {
 		t.Fatal("IsElevated() after elevation expiry = true, want false")
+	}
+}
+
+func TestSessionManagerPersistsAcrossRestart(t *testing.T) {
+	now := time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC)
+	path := filepath.Join(t.TempDir(), "dashboard-auth-sessions.json")
+
+	mgr := NewSessionManager(SessionConfig{
+		IdleTimeout: 365 * 24 * time.Hour,
+		MaxLifetime: 365 * 24 * time.Hour,
+		Persist:     true,
+		PersistPath: path,
+	})
+	mgr.now = func() time.Time { return now }
+
+	sessionID, err := mgr.Create("secret")
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if !mgr.Validate(sessionID, "secret") {
+		t.Fatal("Validate() before restart = false, want true")
+	}
+
+	restarted := NewSessionManager(SessionConfig{
+		IdleTimeout: 365 * 24 * time.Hour,
+		MaxLifetime: 365 * 24 * time.Hour,
+		Persist:     true,
+		PersistPath: path,
+	})
+	restarted.now = func() time.Time { return now }
+
+	if !restarted.Validate(sessionID, "secret") {
+		t.Fatal("Validate() after restart = false, want true")
+	}
+}
+
+func TestSessionManagerClearsElevationAcrossRestartByDefault(t *testing.T) {
+	now := time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC)
+	path := filepath.Join(t.TempDir(), "dashboard-auth-sessions.json")
+
+	mgr := NewSessionManager(SessionConfig{
+		IdleTimeout:     365 * 24 * time.Hour,
+		MaxLifetime:     365 * 24 * time.Hour,
+		ElevationWindow: 15 * time.Minute,
+		Persist:         true,
+		PersistPath:     path,
+	})
+	mgr.now = func() time.Time { return now }
+
+	sessionID, err := mgr.Create("secret")
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if !mgr.Elevate(sessionID, "secret") {
+		t.Fatal("Elevate() = false, want true")
+	}
+
+	restarted := NewSessionManager(SessionConfig{
+		IdleTimeout:     365 * 24 * time.Hour,
+		MaxLifetime:     365 * 24 * time.Hour,
+		ElevationWindow: 15 * time.Minute,
+		Persist:         true,
+		PersistPath:     path,
+	})
+	restarted.now = func() time.Time { return now }
+
+	if restarted.IsElevated(sessionID, "secret") {
+		t.Fatal("IsElevated() after restart = true, want false when persistence across restart is disabled")
 	}
 }

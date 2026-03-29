@@ -90,8 +90,24 @@ type RuntimeConfig struct {
 	// Observability settings
 	Observability ObservabilityConfig
 
+	// Session settings
+	Sessions SessionsRuntimeConfig
+
 	// AutoSolver settings
 	AutoSolver AutoSolverConfig
+}
+
+type SessionsRuntimeConfig struct {
+	Dashboard DashboardSessionRuntimeConfig `json:"dashboard,omitempty"`
+}
+
+type DashboardSessionRuntimeConfig struct {
+	Persist                       bool          `json:"persist,omitempty"`
+	IdleTimeout                   time.Duration `json:"idleTimeout,omitempty"`
+	MaxLifetime                   time.Duration `json:"maxLifetime,omitempty"`
+	ElevationWindow               time.Duration `json:"elevationWindow,omitempty"`
+	PersistElevationAcrossRestart bool          `json:"persistElevationAcrossRestart,omitempty"`
+	RequireElevation              bool          `json:"requireElevation,omitempty"`
 }
 
 // IDPIConfig holds the configuration for the Indirect Prompt Injection (IDPI)
@@ -155,6 +171,7 @@ type FileConfig struct {
 	Timeouts         TimeoutsConfig          `json:"timeouts,omitempty"`
 	Scheduler        SchedulerFileConfig     `json:"scheduler,omitempty"`
 	Observability    ObservabilityFileConfig `json:"observability,omitempty"`
+	Sessions         SessionsFileConfig      `json:"sessions,omitempty"`
 	AutoSolver       AutoSolverFileConfig    `json:"autoSolver,omitempty"`
 }
 
@@ -167,6 +184,19 @@ type ServerConfig struct {
 	NetworkBufferSize *int   `json:"networkBufferSize,omitempty"`
 	TrustProxyHeaders *bool  `json:"trustProxyHeaders,omitempty"`
 	CookieSecure      *bool  `json:"cookieSecure,omitempty"`
+}
+
+type SessionsFileConfig struct {
+	Dashboard DashboardSessionFileConfig `json:"dashboard,omitempty"`
+}
+
+type DashboardSessionFileConfig struct {
+	Persist                       *bool `json:"persist,omitempty"`
+	IdleTimeoutSec                *int  `json:"idleTimeoutSec,omitempty"`
+	MaxLifetimeSec                *int  `json:"maxLifetimeSec,omitempty"`
+	ElevationWindowSec            *int  `json:"elevationWindowSec,omitempty"`
+	PersistElevationAcrossRestart *bool `json:"persistElevationAcrossRestart,omitempty"`
+	RequireElevation              *bool `json:"requireElevation,omitempty"`
 }
 
 type BrowserConfig struct {

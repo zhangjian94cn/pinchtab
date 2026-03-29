@@ -190,29 +190,38 @@ assert_json_exists "$RESULT" ".config" "config payload returned"
 end_test
 
 # ─────────────────────────────────────────────────────────────────
-start_test "auth: sensitive dashboard config update requires elevation"
+start_test "auth: dashboard config update does not require elevation by default"
 
 auth_reset_session
 auth_post_json /api/auth/login "{\"token\":\"${E2E_SERVER_TOKEN}\"}"
 assert_http_status 200 "login succeeds"
-auth_put_json /api/config '{"server":{"token":"forbidden-from-dashboard"}}' -H "Origin: ${E2E_SERVER}"
-assert_http_status 403 "config update requires elevation"
-assert_contains "$RESULT" "elevation_required" "elevation error code returned"
+auth_put_json /api/config '{"server":{"trustProxyHeaders":true}}' -H "Origin: ${E2E_SERVER}"
+assert_http_status 200 "config update succeeds without elevation"
+assert_json_exists "$RESULT" ".config" "config payload returned"
 
 end_test
 
 # ─────────────────────────────────────────────────────────────────
-start_test "auth: elevation unlocks sensitive dashboard config update"
+start_test "auth: elevation unlocks config update when elevation is enabled"
+
+pt PUT /api/config -d '{"sessions":{"dashboard":{"requireElevation":true}}}'
+assert_http_status 200 "header auth enables elevation requirement"
 
 auth_reset_session
 auth_post_json /api/auth/login "{\"token\":\"${E2E_SERVER_TOKEN}\"}"
 assert_http_status 200 "login succeeds"
+auth_put_json /api/config '{"server":{"trustProxyHeaders":false}}' -H "Origin: ${E2E_SERVER}"
+assert_http_status 403 "config update requires elevation when enabled"
+assert_contains "$RESULT" "elevation_required" "elevation error code returned"
 auth_post_json /api/auth/elevate "{\"token\":\"${E2E_SERVER_TOKEN}\"}" -H "Origin: ${E2E_SERVER}"
 assert_http_status 200 "session elevated"
 assert_json_exists "$RESULT" ".elevationWindowSec" "elevation window returned"
-auth_put_json /api/config '{"server":{"token":"forbidden-from-dashboard"}}' -H "Origin: ${E2E_SERVER}"
-assert_http_status 400 "elevated request reaches config handler"
-assert_contains "$RESULT" "token_write_only" "write-only token guard returned"
+auth_put_json /api/config '{"server":{"trustProxyHeaders":false}}' -H "Origin: ${E2E_SERVER}"
+assert_http_status 200 "elevated request reaches config handler"
+assert_json_exists "$RESULT" ".config" "config payload returned"
+
+pt PUT /api/config -d '{"sessions":{"dashboard":{"requireElevation":false}}}'
+assert_http_status 200 "header auth disables elevation requirement"
 
 end_test
 

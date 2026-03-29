@@ -431,7 +431,7 @@ func TestValidateFileConfig_ChromeExtraFlags(t *testing.T) {
 			name:    "unsafe no sandbox",
 			flags:   "--no-sandbox",
 			wantErr: true,
-			wantMsg: "PINCHTAB_CHROME_NO_SANDBOX",
+			wantMsg: "runtime compatibility",
 		},
 		{
 			name:    "reserved user agent",

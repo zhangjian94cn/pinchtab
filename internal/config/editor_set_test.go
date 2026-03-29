@@ -14,6 +14,12 @@ func TestSetConfigValue_ServerFields(t *testing.T) {
 		{"server.token", "secret", func(fc *FileConfig) bool { return fc.Server.Token == "secret" }, false},
 		{"server.stateDir", "/tmp/state", func(fc *FileConfig) bool { return fc.Server.StateDir == "/tmp/state" }, false},
 		{"server.cookieSecure", "false", func(fc *FileConfig) bool { return fc.Server.CookieSecure != nil && *fc.Server.CookieSecure == false }, false},
+		{"sessions.dashboard.persist", "true", func(fc *FileConfig) bool {
+			return fc.Sessions.Dashboard.Persist != nil && *fc.Sessions.Dashboard.Persist
+		}, false},
+		{"sessions.dashboard.maxLifetimeSec", "604800", func(fc *FileConfig) bool {
+			return fc.Sessions.Dashboard.MaxLifetimeSec != nil && *fc.Sessions.Dashboard.MaxLifetimeSec == 604800
+		}, false},
 		{"server.unknown", "value", nil, true},
 	}
 

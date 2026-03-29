@@ -203,6 +203,31 @@ func ValidateFileConfig(fc *FileConfig) []error {
 			Message: fmt.Sprintf("must be > 0 (got %d)", *fc.Observability.Activity.RetentionDays),
 		})
 	}
+	if fc.Sessions.Dashboard.IdleTimeoutSec != nil && *fc.Sessions.Dashboard.IdleTimeoutSec <= 0 {
+		errs = append(errs, ValidationError{
+			Field:   "sessions.dashboard.idleTimeoutSec",
+			Message: fmt.Sprintf("must be > 0 (got %d)", *fc.Sessions.Dashboard.IdleTimeoutSec),
+		})
+	}
+	if fc.Sessions.Dashboard.MaxLifetimeSec != nil && *fc.Sessions.Dashboard.MaxLifetimeSec <= 0 {
+		errs = append(errs, ValidationError{
+			Field:   "sessions.dashboard.maxLifetimeSec",
+			Message: fmt.Sprintf("must be > 0 (got %d)", *fc.Sessions.Dashboard.MaxLifetimeSec),
+		})
+	}
+	if fc.Sessions.Dashboard.ElevationWindowSec != nil && *fc.Sessions.Dashboard.ElevationWindowSec <= 0 {
+		errs = append(errs, ValidationError{
+			Field:   "sessions.dashboard.elevationWindowSec",
+			Message: fmt.Sprintf("must be > 0 (got %d)", *fc.Sessions.Dashboard.ElevationWindowSec),
+		})
+	}
+	if fc.Sessions.Dashboard.IdleTimeoutSec != nil && fc.Sessions.Dashboard.MaxLifetimeSec != nil &&
+		*fc.Sessions.Dashboard.IdleTimeoutSec > *fc.Sessions.Dashboard.MaxLifetimeSec {
+		errs = append(errs, ValidationError{
+			Field:   "sessions.dashboard.idleTimeoutSec/maxLifetimeSec",
+			Message: fmt.Sprintf("idle timeout (%d) must be <= max lifetime (%d)", *fc.Sessions.Dashboard.IdleTimeoutSec, *fc.Sessions.Dashboard.MaxLifetimeSec),
+		})
+	}
 
 	return errs
 }

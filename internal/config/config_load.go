@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
@@ -97,6 +96,18 @@ func Load() *RuntimeConfig {
 			},
 		},
 
+		// Dashboard session defaults
+		Sessions: SessionsRuntimeConfig{
+			Dashboard: DashboardSessionRuntimeConfig{
+				Persist:                       true,
+				IdleTimeout:                   7 * 24 * time.Hour,
+				MaxLifetime:                   7 * 24 * time.Hour,
+				ElevationWindow:               15 * time.Minute,
+				PersistElevationAcrossRestart: false,
+				RequireElevation:              false,
+			},
+		},
+
 		// AutoSolver defaults (disabled by default)
 		AutoSolver: AutoSolverConfig{
 			Enabled:     false,
@@ -157,18 +168,6 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
-}
-
-func envIntOr(key string, fallback int) int {
-	v := os.Getenv(key)
-	if v == "" {
-		return fallback
-	}
-	n, err := strconv.Atoi(v)
-	if err != nil || n < 0 {
-		return fallback
-	}
-	return n
 }
 
 func finalizeProfileConfig(cfg *RuntimeConfig) {
@@ -261,6 +260,24 @@ func applyFileConfig(cfg *RuntimeConfig, fc *FileConfig) {
 	}
 	if fc.Observability.Activity.RetentionDays != nil {
 		cfg.Observability.Activity.RetentionDays = *fc.Observability.Activity.RetentionDays
+	}
+	if fc.Sessions.Dashboard.Persist != nil {
+		cfg.Sessions.Dashboard.Persist = *fc.Sessions.Dashboard.Persist
+	}
+	if fc.Sessions.Dashboard.IdleTimeoutSec != nil && *fc.Sessions.Dashboard.IdleTimeoutSec > 0 {
+		cfg.Sessions.Dashboard.IdleTimeout = time.Duration(*fc.Sessions.Dashboard.IdleTimeoutSec) * time.Second
+	}
+	if fc.Sessions.Dashboard.MaxLifetimeSec != nil && *fc.Sessions.Dashboard.MaxLifetimeSec > 0 {
+		cfg.Sessions.Dashboard.MaxLifetime = time.Duration(*fc.Sessions.Dashboard.MaxLifetimeSec) * time.Second
+	}
+	if fc.Sessions.Dashboard.ElevationWindowSec != nil && *fc.Sessions.Dashboard.ElevationWindowSec > 0 {
+		cfg.Sessions.Dashboard.ElevationWindow = time.Duration(*fc.Sessions.Dashboard.ElevationWindowSec) * time.Second
+	}
+	if fc.Sessions.Dashboard.PersistElevationAcrossRestart != nil {
+		cfg.Sessions.Dashboard.PersistElevationAcrossRestart = *fc.Sessions.Dashboard.PersistElevationAcrossRestart
+	}
+	if fc.Sessions.Dashboard.RequireElevation != nil {
+		cfg.Sessions.Dashboard.RequireElevation = *fc.Sessions.Dashboard.RequireElevation
 	}
 
 	// Browser
@@ -424,9 +441,8 @@ func applyFileConfig(cfg *RuntimeConfig, fc *FileConfig) {
 	if fc.AutoSolver.LLMFallback != nil {
 		cfg.AutoSolver.LLMFallback = *fc.AutoSolver.LLMFallback
 	}
-	// External solver keys: env vars override config file.
-	cfg.AutoSolver.CapsolverKey = envOr("PINCHTAB_AUTOSOLVER_CAPSOLVER_KEY", fc.AutoSolver.External.CapsolverKey)
-	cfg.AutoSolver.TwoCaptchaKey = envOr("PINCHTAB_AUTOSOLVER_2CAPTCHA_KEY", fc.AutoSolver.External.TwoCaptchaKey)
+	cfg.AutoSolver.CapsolverKey = fc.AutoSolver.External.CapsolverKey
+	cfg.AutoSolver.TwoCaptchaKey = fc.AutoSolver.External.TwoCaptchaKey
 }
 
 // ApplyFileConfigToRuntime merges file configuration into an existing runtime

@@ -109,7 +109,7 @@ func (a *AuthAPI) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	authn.SetSessionCookie(w, r, sessionID, a.sessions.MaxLifetime(), a.runtime != nil && a.runtime.TrustProxyHeaders, cookieSecureSetting(a.runtime))
 	authn.AuditLog(r, "auth.session_created",
-		"sessionIdleSec", int(authn.DefaultSessionIdleTimeout.Seconds()),
+		"sessionIdleSec", int(a.sessions.IdleTimeout().Seconds()),
 		"sessionMaxLifetimeSec", int(a.sessions.MaxLifetime().Seconds()),
 	)
 	httpx.JSON(w, http.StatusOK, map[string]string{"status": "ok"})

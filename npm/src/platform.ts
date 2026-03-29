@@ -49,11 +49,6 @@ export function getBinDir(): string {
 }
 
 export function getBinaryPath(binaryName: string, version?: string): string {
-  // Allow override via environment variable (for Docker, custom builds, etc.)
-  if (process.env.PINCHTAB_BINARY_PATH) {
-    return process.env.PINCHTAB_BINARY_PATH;
-  }
-
   // Version-specific path: ~/.pinchtab/bin/0.7.0/pinchtab-darwin-arm64
   // This allows multiple versions to coexist and prevents silent overwrites
   if (version) {

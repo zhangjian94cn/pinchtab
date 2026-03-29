@@ -164,12 +164,8 @@ The core loop executes this chain per attempt:
 }
 ```
 
-### Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `PINCHTAB_AUTOSOLVER_CAPSOLVER_KEY` | Capsolver API key (overrides config) |
-| `PINCHTAB_AUTOSOLVER_2CAPTCHA_KEY` | 2Captcha API key (overrides config) |
+External provider API keys are configured only in `autoSolver.external` in the
+config file.
 
 ## Extension Guide
 

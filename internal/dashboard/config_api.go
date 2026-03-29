@@ -33,6 +33,7 @@ type ConfigAPI struct {
 	profiles  profileLister
 	applier   runtimeConfigApplier
 	agents    agentCounter
+	sessions  *authn.SessionManager
 	version   string
 	startedAt time.Time
 	boot      config.FileConfig
@@ -91,6 +92,13 @@ func NewConfigAPI(
 		startedAt: startedAt,
 		boot:      boot,
 	}
+}
+
+func (c *ConfigAPI) SetSessionManager(sessions *authn.SessionManager) {
+	if c == nil {
+		return
+	}
+	c.sessions = sessions
 }
 
 func (c *ConfigAPI) RegisterHandlers(mux *http.ServeMux) {
@@ -169,6 +177,9 @@ func (c *ConfigAPI) HandlePutConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	config.ApplyFileConfigToRuntime(c.runtime, &normalized)
+	if c.sessions != nil {
+		c.sessions.UpdateConfig(SessionManagerConfig(c.runtime))
+	}
 	if c.applier != nil {
 		c.applier.ApplyRuntimeConfig(c.runtime)
 	}

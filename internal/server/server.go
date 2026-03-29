@@ -64,10 +64,8 @@ func RunDashboard(cfg *config.RuntimeConfig, version string) {
 		}
 	})
 	configAPI := dashboard.NewConfigAPI(cfg, orch, profMgr, orch, dash, version, startedAt)
-	sessions := authn.NewSessionManager(authn.SessionConfig{
-		IdleTimeout: authn.DefaultSessionIdleTimeout,
-		MaxLifetime: authn.DefaultSessionMaxLifetime,
-	})
+	sessions := authn.NewSessionManager(dashboard.SessionManagerConfig(cfg))
+	configAPI.SetSessionManager(sessions)
 	authAPI := dashboard.NewAuthAPI(cfg, sessions)
 
 	// Wire up instance events to SSE broadcast

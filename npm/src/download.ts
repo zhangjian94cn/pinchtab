@@ -166,7 +166,7 @@ async function downloadBinary(
   const expectedHash = checksums.get(binaryName)!;
   const downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/v${version}/${binaryName}`;
 
-  // Ensure directory exists (unless using custom PINCHTAB_BINARY_PATH)
+  // Ensure the managed install directory exists
   const binDir = path.dirname(binaryPath);
   if (!fs.existsSync(binDir)) {
     fs.mkdirSync(binDir, { recursive: true });

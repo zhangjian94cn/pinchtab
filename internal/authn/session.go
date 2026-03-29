@@ -4,30 +4,39 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	DefaultSessionIdleTimeout     = 12 * time.Hour
+	DefaultSessionIdleTimeout     = 7 * 24 * time.Hour
 	DefaultSessionMaxLifetime     = 7 * 24 * time.Hour
 	DefaultSessionElevationWindow = 15 * time.Minute
 )
 
 type SessionConfig struct {
-	IdleTimeout     time.Duration
-	MaxLifetime     time.Duration
-	ElevationWindow time.Duration
+	IdleTimeout                   time.Duration
+	MaxLifetime                   time.Duration
+	ElevationWindow               time.Duration
+	Persist                       bool
+	PersistPath                   string
+	PersistElevationAcrossRestart bool
 }
 
 type SessionManager struct {
-	mu              sync.Mutex
-	sessions        map[string]sessionState
-	idleTimeout     time.Duration
-	maxLifetime     time.Duration
-	elevationWindow time.Duration
-	now             func() time.Time
+	mu                            sync.Mutex
+	sessions                      map[string]sessionState
+	idleTimeout                   time.Duration
+	maxLifetime                   time.Duration
+	elevationWindow               time.Duration
+	persist                       bool
+	persistPath                   string
+	persistElevationAcrossRestart bool
+	now                           func() time.Time
 }
 
 type sessionState struct {
@@ -37,26 +46,29 @@ type sessionState struct {
 	TokenHash     [32]byte
 }
 
+type persistedSessions struct {
+	SavedAt  time.Time                `json:"savedAt"`
+	Sessions []persistedSessionRecord `json:"sessions"`
+}
+
+type persistedSessionRecord struct {
+	ID            string    `json:"id"`
+	CreatedAt     time.Time `json:"createdAt"`
+	LastSeen      time.Time `json:"lastSeen"`
+	ElevatedUntil time.Time `json:"elevatedUntil,omitempty"`
+	TokenHash     string    `json:"tokenHash"`
+}
+
 func NewSessionManager(cfg SessionConfig) *SessionManager {
-	idle := cfg.IdleTimeout
-	if idle <= 0 {
-		idle = DefaultSessionIdleTimeout
+	m := &SessionManager{
+		sessions: make(map[string]sessionState),
+		now:      time.Now,
 	}
-	maxLifetime := cfg.MaxLifetime
-	if maxLifetime <= 0 {
-		maxLifetime = DefaultSessionMaxLifetime
-	}
-	elevationWindow := cfg.ElevationWindow
-	if elevationWindow <= 0 {
-		elevationWindow = DefaultSessionElevationWindow
-	}
-	return &SessionManager{
-		sessions:        make(map[string]sessionState),
-		idleTimeout:     idle,
-		maxLifetime:     maxLifetime,
-		elevationWindow: elevationWindow,
-		now:             time.Now,
-	}
+	m.mu.Lock()
+	m.applyConfigLocked(cfg)
+	m.mu.Unlock()
+	m.loadPersisted()
+	return m
 }
 
 func (m *SessionManager) Create(token string) (string, error) {
@@ -74,6 +86,7 @@ func (m *SessionManager) Create(token string) (string, error) {
 		LastSeen:  now,
 		TokenHash: hashToken(token),
 	}
+	m.saveLocked()
 	m.mu.Unlock()
 	return id, nil
 }
@@ -99,10 +112,12 @@ func (m *SessionManager) Validate(sessionID, token string) bool {
 	}
 	if !m.sessionValid(state, now, expected) {
 		delete(m.sessions, sessionID)
+		m.saveLocked()
 		return false
 	}
 	state.LastSeen = now
 	m.sessions[sessionID] = state
+	m.saveLocked()
 	return true
 }
 
@@ -127,11 +142,13 @@ func (m *SessionManager) Elevate(sessionID, token string) bool {
 	}
 	if !m.sessionValid(state, now, expected) {
 		delete(m.sessions, sessionID)
+		m.saveLocked()
 		return false
 	}
 	state.LastSeen = now
 	state.ElevatedUntil = now.Add(m.elevationWindow)
 	m.sessions[sessionID] = state
+	m.saveLocked()
 	return true
 }
 
@@ -171,6 +188,7 @@ func (m *SessionManager) Revoke(sessionID string) {
 	}
 	m.mu.Lock()
 	delete(m.sessions, sessionID)
+	m.saveLocked()
 	m.mu.Unlock()
 }
 
@@ -181,6 +199,13 @@ func (m *SessionManager) MaxLifetime() time.Duration {
 	return m.maxLifetime
 }
 
+func (m *SessionManager) IdleTimeout() time.Duration {
+	if m == nil {
+		return DefaultSessionIdleTimeout
+	}
+	return m.idleTimeout
+}
+
 func (m *SessionManager) ElevationWindow() time.Duration {
 	if m == nil {
 		return DefaultSessionElevationWindow
@@ -188,10 +213,154 @@ func (m *SessionManager) ElevationWindow() time.Duration {
 	return m.elevationWindow
 }
 
+func (m *SessionManager) UpdateConfig(cfg SessionConfig) {
+	if m == nil {
+		return
+	}
+
+	persistPath := strings.TrimSpace(cfg.PersistPath)
+	persist := cfg.Persist && persistPath != ""
+
+	m.mu.Lock()
+	oldPath := m.persistPath
+	oldPersist := m.persist
+	m.applyConfigLocked(cfg)
+	m.pruneExpiredLocked(m.now())
+	m.saveLocked()
+	m.mu.Unlock()
+
+	if oldPersist && oldPath != "" && (!persist || oldPath != persistPath) {
+		_ = os.Remove(oldPath)
+	}
+}
+
+func (m *SessionManager) applyConfigLocked(cfg SessionConfig) {
+	idle := cfg.IdleTimeout
+	if idle <= 0 {
+		idle = DefaultSessionIdleTimeout
+	}
+	maxLifetime := cfg.MaxLifetime
+	if maxLifetime <= 0 {
+		maxLifetime = DefaultSessionMaxLifetime
+	}
+	elevationWindow := cfg.ElevationWindow
+	if elevationWindow <= 0 {
+		elevationWindow = DefaultSessionElevationWindow
+	}
+	persistPath := strings.TrimSpace(cfg.PersistPath)
+	persist := cfg.Persist && persistPath != ""
+
+	m.idleTimeout = idle
+	m.maxLifetime = maxLifetime
+	m.elevationWindow = elevationWindow
+	m.persist = persist
+	m.persistPath = persistPath
+	m.persistElevationAcrossRestart = cfg.PersistElevationAcrossRestart
+}
+
 func (m *SessionManager) sessionValid(state sessionState, now time.Time, expected [32]byte) bool {
+	return m.sessionTimeValid(state, now) && state.TokenHash == expected
+}
+
+func (m *SessionManager) sessionTimeValid(state sessionState, now time.Time) bool {
 	return now.Sub(state.LastSeen) <= m.idleTimeout &&
-		now.Sub(state.CreatedAt) <= m.maxLifetime &&
-		state.TokenHash == expected
+		now.Sub(state.CreatedAt) <= m.maxLifetime
+}
+
+func (m *SessionManager) pruneExpiredLocked(now time.Time) {
+	for id, state := range m.sessions {
+		if !m.sessionTimeValid(state, now) {
+			delete(m.sessions, id)
+		}
+	}
+}
+
+func (m *SessionManager) loadPersisted() {
+	if m == nil {
+		return
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if !m.persist || m.persistPath == "" {
+		return
+	}
+
+	data, err := os.ReadFile(m.persistPath)
+	if err != nil {
+		return
+	}
+	var persisted persistedSessions
+	if err := json.Unmarshal(data, &persisted); err != nil {
+		return
+	}
+
+	now := m.now()
+	loaded := make(map[string]sessionState, len(persisted.Sessions))
+	for _, record := range persisted.Sessions {
+		tokenHash, err := hex.DecodeString(strings.TrimSpace(record.TokenHash))
+		if err != nil || len(tokenHash) != sha256.Size {
+			continue
+		}
+		var hash [32]byte
+		copy(hash[:], tokenHash)
+
+		state := sessionState{
+			CreatedAt:     record.CreatedAt,
+			LastSeen:      record.LastSeen,
+			ElevatedUntil: record.ElevatedUntil,
+			TokenHash:     hash,
+		}
+		if !m.persistElevationAcrossRestart {
+			state.ElevatedUntil = time.Time{}
+		}
+		if !m.sessionTimeValid(state, now) {
+			continue
+		}
+		recordID := strings.TrimSpace(record.ID)
+		if recordID == "" {
+			continue
+		}
+		loaded[recordID] = state
+	}
+	m.sessions = loaded
+	m.saveLocked()
+}
+
+func (m *SessionManager) saveLocked() {
+	if !m.persist || m.persistPath == "" {
+		return
+	}
+
+	snapshot := persistedSessions{
+		SavedAt:  m.now().UTC(),
+		Sessions: make([]persistedSessionRecord, 0, len(m.sessions)),
+	}
+	for id, state := range m.sessions {
+		record := persistedSessionRecord{
+			ID:            id,
+			CreatedAt:     state.CreatedAt,
+			LastSeen:      state.LastSeen,
+			ElevatedUntil: state.ElevatedUntil,
+			TokenHash:     hex.EncodeToString(state.TokenHash[:]),
+		}
+		if !m.persistElevationAcrossRestart {
+			record.ElevatedUntil = time.Time{}
+		}
+		snapshot.Sessions = append(snapshot.Sessions, record)
+	}
+
+	data, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		return
+	}
+	if err := os.MkdirAll(filepath.Dir(m.persistPath), 0755); err != nil {
+		return
+	}
+	if err := os.WriteFile(m.persistPath, data, 0600); err != nil {
+		return
+	}
 }
 
 func randomSessionID() (string, error) {

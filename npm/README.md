@@ -144,13 +144,7 @@ pinchtab completion fish > ~/.config/fish/completions/pinchtab.fish
 
 ### Using a Custom Binary
 
-For Docker, development, or other custom setups:
-
-```bash
-PINCHTAB_BINARY_PATH=/path/to/pinchtab npx pinchtab serve
-```
-
-Or in code:
+For development or custom integrations, pass the path explicitly in code:
 
 ```typescript
 const pinch = new Pinchtab();
@@ -173,21 +167,10 @@ If no binaries (only Docker images), rebuild with a newer release:
 npm rebuild pinchtab
 ```
 
-Or use a custom binary:
-```bash
-export PINCHTAB_BINARY_PATH=/path/to/pinchtab
-npm rebuild pinchtab
-```
-
 **Behind a proxy:**
 ```bash
 export HTTPS_PROXY=https://proxy:port
 npm rebuild pinchtab
-```
-
-**Using a pre-built binary:**
-```bash
-PINCHTAB_BINARY_PATH=/path/to/binary npm rebuild pinchtab
 ```
 
 ## Future: OptionalDependencies Pattern (v1.0)

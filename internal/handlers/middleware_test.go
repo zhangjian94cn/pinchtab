@@ -424,7 +424,14 @@ func TestAuthMiddleware_CookieWebSocketRequiresSameOrigin(t *testing.T) {
 }
 
 func TestAuthMiddleware_CookieElevatedEndpointRequiresElevation(t *testing.T) {
-	cfg := &config.RuntimeConfig{Token: "secret123"}
+	cfg := &config.RuntimeConfig{
+		Token: "secret123",
+		Sessions: config.SessionsRuntimeConfig{
+			Dashboard: config.DashboardSessionRuntimeConfig{
+				RequireElevation: true,
+			},
+		},
+	}
 	sessions := authn.NewSessionManager(authn.SessionConfig{})
 	sessionID, err := sessions.Create(cfg.Token)
 	if err != nil {
@@ -463,6 +470,34 @@ func TestAuthMiddleware_CookieElevatedEndpointRequiresElevation(t *testing.T) {
 
 	if !called {
 		t.Fatal("handler should allow elevated endpoint with elevation")
+	}
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+}
+
+func TestAuthMiddleware_CookieConfigEndpointDoesNotRequireElevationByDefault(t *testing.T) {
+	cfg := &config.RuntimeConfig{Token: "secret123"}
+	sessions := authn.NewSessionManager(authn.SessionConfig{})
+	sessionID, err := sessions.Create(cfg.Token)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	called := false
+	handler := AuthMiddlewareWithSessions(cfg, sessions, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodPut, "/api/config", nil)
+	req.AddCookie(&http.Cookie{Name: authn.CookieName, Value: sessionID})
+	req.Header.Set("Referer", "http://example.com/dashboard")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if !called {
+		t.Fatal("handler should allow config endpoint without elevation when requireElevation is disabled")
 	}
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)

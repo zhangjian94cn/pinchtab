@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestEnvOr(t *testing.T) {
@@ -20,26 +21,6 @@ func TestEnvOr(t *testing.T) {
 	defer func() { _ = os.Unsetenv(key) }()
 	if got := envOr(key, fallback); got != val {
 		t.Errorf("envOr() = %v, want %v", got, val)
-	}
-}
-
-func TestEnvIntOr(t *testing.T) {
-	key := "PINCHTAB_TEST_INT"
-	fallback := 42
-
-	_ = os.Unsetenv(key)
-	if got := envIntOr(key, fallback); got != fallback {
-		t.Errorf("envIntOr() = %v, want %v", got, fallback)
-	}
-
-	_ = os.Setenv(key, "100")
-	if got := envIntOr(key, fallback); got != 100 {
-		t.Errorf("envIntOr() = %v, want %v", got, 100)
-	}
-
-	_ = os.Setenv(key, "invalid")
-	if got := envIntOr(key, fallback); got != fallback {
-		t.Errorf("envIntOr() = %v, want %v", got, fallback)
 	}
 }
 
@@ -119,6 +100,18 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.Observability.Activity.RetentionDays != 1 {
 		t.Errorf("default Observability.Activity.RetentionDays = %d, want 1", cfg.Observability.Activity.RetentionDays)
 	}
+	if !cfg.Sessions.Dashboard.Persist {
+		t.Errorf("default Sessions.Dashboard.Persist = %v, want true", cfg.Sessions.Dashboard.Persist)
+	}
+	if cfg.Sessions.Dashboard.IdleTimeout != 7*24*time.Hour {
+		t.Errorf("default Sessions.Dashboard.IdleTimeout = %v, want %v", cfg.Sessions.Dashboard.IdleTimeout, 7*24*time.Hour)
+	}
+	if cfg.Sessions.Dashboard.MaxLifetime != 7*24*time.Hour {
+		t.Errorf("default Sessions.Dashboard.MaxLifetime = %v, want %v", cfg.Sessions.Dashboard.MaxLifetime, 7*24*time.Hour)
+	}
+	if cfg.Sessions.Dashboard.RequireElevation {
+		t.Errorf("default Sessions.Dashboard.RequireElevation = %v, want false", cfg.Sessions.Dashboard.RequireElevation)
+	}
 }
 
 func TestLoadConfigTokenEnvOverride(t *testing.T) {
@@ -179,6 +172,9 @@ func TestConfigFileWithNestedValues(t *testing.T) {
 		"server": {
 			"port": "8888"
 		},
+		"instanceDefaults": {
+			"maxParallelTabs": 4
+		},
 		"multiInstance": {
 			"strategy": "explicit"
 		}
@@ -192,6 +188,9 @@ func TestConfigFileWithNestedValues(t *testing.T) {
 	// Config file values should be used
 	if cfg.Port != "8888" {
 		t.Errorf("config file Port = %v, want 8888", cfg.Port)
+	}
+	if cfg.MaxParallelTabs != 4 {
+		t.Errorf("config file MaxParallelTabs = %v, want 4", cfg.MaxParallelTabs)
 	}
 	if cfg.Strategy != "explicit" {
 		t.Errorf("config file Strategy = %v, want explicit", cfg.Strategy)

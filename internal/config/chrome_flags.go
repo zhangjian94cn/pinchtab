@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-const chromeNoSandboxEnvVar = "PINCHTAB_CHROME_NO_SANDBOX"
-
-func ChromeNoSandboxEnvVar() string {
-	return chromeNoSandboxEnvVar
-}
-
 // AllowedChromeExtraFlags returns the subset of browser.extraFlags that are
 // allowed to reach the browser process after security and ownership checks.
 func AllowedChromeExtraFlags(raw string) []string {
@@ -120,5 +114,5 @@ var disallowedChromeExtraFlags = map[string]string{
 	"--disable-web-security":                "weakens browser security and is not allowed",
 	"--ignore-certificate-errors":           "weakens TLS validation and is not allowed",
 	"--ignore-certificate-errors-spki-list": "weakens TLS validation and is not allowed",
-	"--no-sandbox":                          fmt.Sprintf("is not allowed in browser.extraFlags; PinchTab enables it only through runtime compatibility when needed, or via %s=1 for container compatibility", chromeNoSandboxEnvVar),
+	"--no-sandbox":                          "is not allowed in browser.extraFlags; PinchTab enables it only through runtime compatibility when needed",
 }

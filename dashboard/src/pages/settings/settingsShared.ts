@@ -14,7 +14,8 @@ export type SectionId =
   | "profiles"
   | "network"
   | "browser"
-  | "timeouts";
+  | "timeouts"
+  | "autosolver";
 
 export const sections: Array<{
   id: SectionId;
@@ -65,6 +66,11 @@ export const sections: Array<{
     id: "timeouts",
     label: "Timeouts",
     description: "Action, navigation, shutdown, and wait timing.",
+  },
+  {
+    id: "autosolver",
+    label: "AutoSolver",
+    description: "Challenge-solving behavior and config-file-backed providers.",
   },
 ];
 

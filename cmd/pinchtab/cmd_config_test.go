@@ -121,7 +121,7 @@ func TestConfigSetRejectsUnsafeChromeExtraFlags(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(output, "browser.extraFlags") || !strings.Contains(output, "PINCHTAB_CHROME_NO_SANDBOX") {
+	if !strings.Contains(output, "browser.extraFlags") || !strings.Contains(output, "runtime compatibility") {
 		t.Fatalf("expected unsafe flag warning, got %q", output)
 	}
 

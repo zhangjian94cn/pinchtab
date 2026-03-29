@@ -76,6 +76,18 @@ func TestDefaultFileConfig(t *testing.T) {
 	if !fc.Security.IDPI.WrapContent {
 		t.Errorf("DefaultFileConfig.Security.IDPI.WrapContent = %v, want true", fc.Security.IDPI.WrapContent)
 	}
+	if fc.Sessions.Dashboard.Persist == nil || !*fc.Sessions.Dashboard.Persist {
+		t.Errorf("DefaultFileConfig.Sessions.Dashboard.Persist = %v, want explicit true", formatBoolPtr(fc.Sessions.Dashboard.Persist))
+	}
+	if fc.Sessions.Dashboard.IdleTimeoutSec == nil || *fc.Sessions.Dashboard.IdleTimeoutSec != 7*24*60*60 {
+		t.Errorf("DefaultFileConfig.Sessions.Dashboard.IdleTimeoutSec = %v, want %d", formatIntPtr(fc.Sessions.Dashboard.IdleTimeoutSec), 7*24*60*60)
+	}
+	if fc.Sessions.Dashboard.MaxLifetimeSec == nil || *fc.Sessions.Dashboard.MaxLifetimeSec != 7*24*60*60 {
+		t.Errorf("DefaultFileConfig.Sessions.Dashboard.MaxLifetimeSec = %v, want %d", formatIntPtr(fc.Sessions.Dashboard.MaxLifetimeSec), 7*24*60*60)
+	}
+	if fc.Sessions.Dashboard.RequireElevation == nil || *fc.Sessions.Dashboard.RequireElevation {
+		t.Errorf("DefaultFileConfig.Sessions.Dashboard.RequireElevation = %v, want explicit false", formatBoolPtr(fc.Sessions.Dashboard.RequireElevation))
+	}
 }
 
 // TestIsLegacyConfig tests the format detection logic.

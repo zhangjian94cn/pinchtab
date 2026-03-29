@@ -65,4 +65,19 @@ describe("SettingsPage", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/No API token is set/i)).not.toBeInTheDocument();
   });
+
+  it("shows autosolver config as file-backed with no env var overrides", async () => {
+    renderSettingsPage();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: /AutoSolver/i }),
+    );
+
+    expect(
+      screen.getByText(
+        "Dashboard edits are written back to this file. External provider keys stay under autoSolver.external in the same config.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("/tmp/config.json")).toBeInTheDocument();
+  });
 });

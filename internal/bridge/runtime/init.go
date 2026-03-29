@@ -382,9 +382,6 @@ func chromeNeedsNoSandbox() bool {
 	if runtimeGOOS != "linux" {
 		return false
 	}
-	if os.Getenv(config.ChromeNoSandboxEnvVar()) == "1" {
-		return true
-	}
 	if osGeteuid() == 0 {
 		return true
 	}

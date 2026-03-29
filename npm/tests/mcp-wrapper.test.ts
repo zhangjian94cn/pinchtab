@@ -10,6 +10,7 @@ import * as assert from 'node:assert';
 import { spawnSync } from 'node:child_process';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 
 /**
  * Extracted firstSubcommand logic from bin/pinchtab for isolated testing.
@@ -54,22 +55,51 @@ describe('firstSubcommand', () => {
 });
 
 describe('MCP wrapper integration', () => {
-  function findBinary(): string | null {
-    // Prefer explicit override (CI or local dev with `go build -o`)
-    if (process.env.PINCHTAB_BINARY_PATH) {
-      return process.env.PINCHTAB_BINARY_PATH;
-    }
+  function findDevBinary(): string | null {
     // Dev build in repo root (go build -o pinchtab-dev ./cmd/pinchtab)
     const devBinary = path.join(__dirname, '..', '..', 'pinchtab-dev');
     if (fs.existsSync(devBinary)) return devBinary;
     return null;
   }
 
-  const binaryPath = findBinary();
+  function stageManagedBinary(binaryPath: string): { homeDir: string; binaryPath: string } {
+    const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pinchtab-home-'));
+    const pkgPath = path.join(__dirname, '..', '..', 'package.json');
+    const version = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version;
+    let arch: 'amd64' | 'arm64';
+    if (process.arch === 'x64') {
+      arch = 'amd64';
+    } else if (process.arch === 'arm64') {
+      arch = 'arm64';
+    } else {
+      throw new Error(`Unsupported architecture: ${process.arch}`);
+    }
+
+    let binaryName: string;
+    if (process.platform === 'darwin') {
+      binaryName = `pinchtab-darwin-${arch}`;
+    } else if (process.platform === 'linux') {
+      binaryName = `pinchtab-linux-${arch}`;
+    } else if (process.platform === 'win32') {
+      binaryName = `pinchtab-windows-${arch}.exe`;
+    } else {
+      throw new Error(`Unsupported platform: ${process.platform}`);
+    }
+
+    const managedBinaryPath = path.join(homeDir, '.pinchtab', 'bin', version, binaryName);
+    fs.mkdirSync(path.dirname(managedBinaryPath), { recursive: true });
+    fs.copyFileSync(binaryPath, managedBinaryPath);
+    fs.chmodSync(managedBinaryPath, 0o755);
+
+    return { homeDir, binaryPath: managedBinaryPath };
+  }
+
+  const binaryPath = findDevBinary();
   // __dirname is dist/tests/ after tsc, wrapper lives at bin/ (sibling to dist/)
   const wrapperPath = path.join(__dirname, '..', '..', 'bin', 'pinchtab');
 
   test('wrapper responds to JSON-RPC initialize via stdin', { skip: !binaryPath }, () => {
+    const staged = stageManagedBinary(binaryPath!);
     const initMsg = JSON.stringify({
       jsonrpc: '2.0',
       id: 1,
@@ -87,7 +117,8 @@ describe('MCP wrapper integration', () => {
       env: {
         ...process.env,
         PINCHTAB_TOKEN: 'test',
-        PINCHTAB_BINARY_PATH: binaryPath!,
+        HOME: staged.homeDir,
+        USERPROFILE: staged.homeDir,
       },
     });
 
@@ -106,6 +137,7 @@ describe('MCP wrapper integration', () => {
   });
 
   test('wrapper with --server flag still detects mcp subcommand', { skip: !binaryPath }, () => {
+    const staged = stageManagedBinary(binaryPath!);
     const initMsg = JSON.stringify({
       jsonrpc: '2.0',
       id: 1,
@@ -123,7 +155,8 @@ describe('MCP wrapper integration', () => {
       env: {
         ...process.env,
         PINCHTAB_TOKEN: 'test',
-        PINCHTAB_BINARY_PATH: binaryPath!,
+        HOME: staged.homeDir,
+        USERPROFILE: staged.homeDir,
       },
     });
 

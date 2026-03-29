@@ -3,11 +3,7 @@ import type { ComponentProps } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Card } from "../components/atoms";
 import * as api from "../services/api";
-import {
-  credentialUsername,
-  dispatchAuthStateChanged,
-  storeTokenCredential,
-} from "../services/auth";
+import { dispatchAuthStateChanged } from "../services/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -15,7 +11,6 @@ export default function LoginPage() {
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const savedCredentialUsername = credentialUsername();
 
   const from =
     (location.state as { from?: string } | null)?.from ||
@@ -29,7 +24,6 @@ export default function LoginPage() {
     setError("");
     try {
       await api.login(token);
-      await storeTokenCredential(token, event.currentTarget);
       dispatchAuthStateChanged();
       navigate(from, { replace: true });
     } catch (e) {
@@ -56,26 +50,14 @@ export default function LoginPage() {
         <form
           id="login-form"
           className="space-y-4"
-          autoComplete="on"
+          autoComplete="off"
           onSubmit={handleSubmit}
         >
-          <input
-            id="login-username"
-            type="text"
-            name="username"
-            autoComplete="username"
-            value={savedCredentialUsername}
-            readOnly
-            tabIndex={-1}
-            aria-hidden="true"
-            className="sr-only"
-          />
           <input
             id="login-password"
             type="password"
             autoFocus
-            name="password"
-            autoComplete="current-password"
+            autoComplete="off"
             value={token}
             onChange={(e) => setToken(e.target.value)}
             className="w-full rounded-sm border border-border-subtle bg-[rgb(var(--brand-surface-code-rgb)/0.72)] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-all duration-150 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"

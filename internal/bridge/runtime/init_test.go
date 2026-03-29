@@ -3,8 +3,6 @@ package runtime
 import (
 	"os"
 	"testing"
-
-	"github.com/pinchtab/pinchtab/internal/config"
 )
 
 func TestChromeNeedsNoSandbox(t *testing.T) {
@@ -22,14 +20,8 @@ func TestChromeNeedsNoSandbox(t *testing.T) {
 	containerMarkerPath = t.TempDir() + "/missing-dockerenv"
 
 	if chromeNeedsNoSandbox() {
-		t.Fatal("expected no-sandbox compatibility to be disabled without root, env override, or container marker")
+		t.Fatal("expected no-sandbox compatibility to be disabled without root or container marker")
 	}
-
-	t.Setenv(config.ChromeNoSandboxEnvVar(), "1")
-	if !chromeNeedsNoSandbox() {
-		t.Fatal("expected env override to enable no-sandbox compatibility")
-	}
-	t.Setenv(config.ChromeNoSandboxEnvVar(), "")
 
 	osGeteuid = func() int { return 0 }
 	if !chromeNeedsNoSandbox() {
