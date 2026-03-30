@@ -54,11 +54,13 @@ describe("SettingsPage", () => {
       await screen.findByRole("button", { name: /Network & Attach/i }),
     );
 
-    expect(
-      screen.getByText(
-        "Token configured. Manage rotation through the CLI or config file; the current value is never returned by the server.",
-      ),
-    ).toBeInTheDocument();
+    const tokenHint = screen.getByText("pinchtab config token").parentElement;
+
+    expect(tokenHint).toHaveTextContent(
+      "Token configured. Manage rotation through the CLI or config file; the current value is never returned by the server.",
+    );
+    expect(tokenHint).toHaveTextContent("pinchtab config token");
+    expect(tokenHint).toHaveTextContent("to copy it to your clipboard.");
     expect(screen.queryByLabelText("API token")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Generate" }),

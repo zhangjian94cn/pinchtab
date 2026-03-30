@@ -222,15 +222,22 @@ start_test "config token fails with empty token"
 
 config_setup
 config_init
-# No token set - should fail
+
+# config init now generates a token; blank it explicitly for this failure case.
+TMP_CFG=$(mktemp)
+jq '.server.token = ""' "$CFG" > "$TMP_CFG"
+mv "$TMP_CFG" "$CFG"
+
+# Empty token should fail.
 PINCHTAB_CONFIG="$CFG" pt_fail config token
-# Check error message in stderr or combined output
-if echo "$PT_ERR$PT_OUT" | grep -qi "empty"; then
+
+# Check error message in stderr or stdout
+if printf '%s\n%s\n' "$PT_ERR" "$PT_OUT" | grep -qi "empty"; then
   echo -e "  ${GREEN}✓${NC} reports empty token error"
   ((ASSERTIONS_PASSED++)) || true
 else
-  echo -e "  ${YELLOW}⚠${NC} expected empty token error message"
-  ((ASSERTIONS_PASSED++)) || true
+  echo -e "  ${RED}✗${NC} expected empty token error message"
+  ((ASSERTIONS_FAILED++)) || true
 fi
 
 config_cleanup
