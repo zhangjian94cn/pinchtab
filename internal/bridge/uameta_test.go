@@ -8,6 +8,7 @@ import (
 func TestBuild_Empty(t *testing.T) {
 	if buildUserAgentOverride("", "") != nil {
 		t.Fatal("expected nil for empty chrome version")
+		return
 	}
 
 	p := buildUserAgentOverride("", "144.0.0.0")
@@ -17,6 +18,7 @@ func TestBuild_Empty(t *testing.T) {
 	}
 	if p.UserAgent == "" {
 		t.Fatal("expected generated user agent")
+		return
 	}
 }
 
@@ -24,9 +26,11 @@ func TestBuild_UsesResolvedUserAgent(t *testing.T) {
 	p := buildUserAgentOverride("", "144.0.0.0")
 	if p == nil {
 		t.Fatal("expected non-nil")
+		return
 	}
 	if !strings.Contains(p.UserAgent, "Chrome/144.0.0.0") {
 		t.Fatalf("expected resolved UA to contain full Chrome version, got %q", p.UserAgent)
+		return
 	}
 }
 
@@ -57,15 +61,19 @@ func TestBuild_UsesPersonaMetadata(t *testing.T) {
 	p := buildUserAgentOverride("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.133 Safari/537.36", "144.0.7559.133")
 	if p == nil || p.UserAgentMetadata == nil {
 		t.Fatal("expected metadata")
+		return
 	}
 	if p.AcceptLanguage != "en-US,en" {
 		t.Fatalf("expected accept language from persona, got %q", p.AcceptLanguage)
+		return
 	}
 	if p.Platform != "Win32" {
 		t.Fatalf("expected navigator platform Win32, got %q", p.Platform)
+		return
 	}
 	if got := p.UserAgentMetadata.Platform; got != "Windows" {
 		t.Fatalf("expected UA data platform Windows, got %q", got)
+		return
 	}
 }
 
@@ -73,8 +81,10 @@ func TestBuildLocaleOverride_UsesPersonaLanguage(t *testing.T) {
 	p := buildLocaleOverride("", "144.0.7559.133")
 	if p == nil {
 		t.Fatal("expected locale override")
+		return
 	}
 	if p.Locale != "en-US" {
 		t.Fatalf("expected locale override en-US, got %q", p.Locale)
+		return
 	}
 }

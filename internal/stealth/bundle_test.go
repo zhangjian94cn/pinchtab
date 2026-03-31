@@ -11,6 +11,7 @@ func TestNewBundleIncludesSeedLevelAndPopupGuard(t *testing.T) {
 	bundle := NewBundle(&config.RuntimeConfig{StealthLevel: "medium"}, 1234)
 	if bundle == nil {
 		t.Fatal("expected non-nil bundle")
+		return
 	}
 	if bundle.Level != LevelMedium {
 		t.Fatalf("expected level medium, got %s", bundle.Level)
@@ -50,6 +51,7 @@ func TestStatusFromBundleReflectsCurrentCapabilityShape(t *testing.T) {
 	status := StatusFromBundle(bundle, cfg, LaunchModeAllocator)
 	if status == nil {
 		t.Fatal("expected non-nil status")
+		return
 	}
 	if !status.Capabilities["webglSpoofing"] {
 		t.Fatal("expected full mode to report webgl spoofing")
@@ -107,6 +109,7 @@ func TestStatusFromBundleDisablesWebGLSpoofingWhenHeaded(t *testing.T) {
 	status := StatusFromBundle(bundle, cfg, LaunchModeAllocator)
 	if status == nil {
 		t.Fatal("expected non-nil status")
+		return
 	}
 	if status.Capabilities["webglSpoofing"] {
 		t.Fatal("expected headed full mode to avoid WebGL spoofing")

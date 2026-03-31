@@ -455,6 +455,7 @@ func TestOrchestrator_AttachBridge_UpsertsExistingBridge(t *testing.T) {
 	o.mu.RUnlock()
 	if internal == nil {
 		t.Fatalf("attached instance %q missing from orchestrator", first.ID)
+		return
 	}
 	if internal.authToken != "bridge-token-1" {
 		t.Fatalf("authToken = %q, want %q", internal.authToken, "bridge-token-1")
