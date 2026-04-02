@@ -227,6 +227,78 @@ Notes:
 - clipboard endpoints are gated by `security.allowClipboard`
 - upload uses a JSON body with `selector` and `files`
 
+## Storage
+
+```text
+GET    /storage
+POST   /storage
+DELETE /storage
+GET    /tabs/{id}/storage
+POST   /tabs/{id}/storage
+DELETE /tabs/{id}/storage
+```
+
+Storage is captured only for the current origin (active tab). Multi-origin storage is not supported.
+
+GET query parameters:
+
+- `type` — `local`, `session`, or empty (both)
+- `key` — optional, specific key to retrieve
+- `tabId` — optional tab identifier
+
+POST body fields:
+
+- `key` — required
+- `value` — required
+- `type` — `local` or `session` (required)
+- `tabId` — optional
+
+DELETE body fields:
+
+- `type` — `local` or `session` (required)
+- `key` — optional (if omitted, clears entire storage)
+- `tabId` — optional
+
+## State Management
+
+```text
+GET    /state/list
+GET    /state/show
+POST   /state/save
+POST   /state/load
+DELETE /state
+POST   /state/clean
+```
+
+State management saves and restores browser state (cookies, localStorage, sessionStorage, metadata) to disk.
+
+Notes:
+
+- `POST /state/save` and `GET /state/show` are gated by `security.allowStateExport`
+- state files are stored in `{stateDir}/sessions/` with `0600` permissions
+- optional AES-256-GCM encryption via `PINCHTAB_STATE_KEY` environment variable
+- storage is captured only for the current origin (active tab)
+
+`POST /state/save` body fields:
+
+- `name` — state file name
+- `encrypt` — optional, encrypt the state file
+- `tabId` — optional tab identifier
+- `metadata` — optional additional metadata
+
+`POST /state/load` body fields:
+
+- `name` — state file name (required)
+- `tabId` — optional tab identifier
+
+`DELETE /state` query parameters:
+
+- `name` — state file name (required)
+
+`POST /state/clean` body fields:
+
+- `olderThanHours` — optional (default: 24)
+
 ## Wait, Network, Dialog, Console, And Errors
 
 ```text
@@ -418,6 +490,7 @@ These gates are not ordinary feature toggles. Enabling them is a documented, non
 - clipboard routes -> `security.allowClipboard`
 - attach routes -> `security.attach`
 - screencast routes -> `security.allowScreencast`
+- `/state/save` and `/state/show` -> `security.allowStateExport`
 
 ## Error Response Format
 

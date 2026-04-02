@@ -219,6 +219,10 @@ func (o *Orchestrator) AllowsUpload() bool {
 	return o != nil && o.runtimeCfg != nil && o.runtimeCfg.AllowUpload
 }
 
+func (o *Orchestrator) AllowsStateExport() bool {
+	return o != nil && o.runtimeCfg != nil && o.runtimeCfg.AllowStateExport
+}
+
 func (o *Orchestrator) SetPortRange(start, end int) {
 	o.portAllocator = NewPortAllocator(start, end)
 }

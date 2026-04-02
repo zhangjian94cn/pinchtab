@@ -63,5 +63,11 @@ func (h *Handlers) endpointSecurityStates() map[string]endpointSecurityState {
 			Message: httpx.DisabledEndpointMessage("clipboard", "security.allowClipboard"),
 			Paths:   []string{"GET /clipboard/read", "POST /clipboard/write", "POST /clipboard/copy", "GET /clipboard/paste"},
 		},
+		"stateExport": {
+			Enabled: h.stateExportEnabled(),
+			Setting: "security.allowStateExport",
+			Message: httpx.DisabledEndpointMessage("stateExport", "security.allowStateExport"),
+			Paths:   []string{"POST /state/save", "GET /state/show"},
+		},
 	}
 }

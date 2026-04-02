@@ -219,6 +219,19 @@ func (h *Handlers) RegisterRoutes(mux *http.ServeMux, doShutdown func()) {
 	mux.HandleFunc("POST /cache/clear", h.HandleCacheClear)
 	mux.HandleFunc("GET /cache/status", h.HandleCacheStatus)
 
+	// Storage (current origin only)
+	mux.HandleFunc("GET /storage", h.HandleStorage)
+	mux.HandleFunc("POST /storage", h.HandleStorage)
+	mux.HandleFunc("DELETE /storage", h.HandleStorage)
+
+	// State management
+	mux.HandleFunc("GET /state/list", h.HandleStateList)
+	mux.HandleFunc("GET /state/show", h.HandleStateShow)
+	mux.HandleFunc("POST /state/save", h.HandleStateSave)
+	mux.HandleFunc("POST /state/load", h.HandleStateLoad)
+	mux.HandleFunc("DELETE /state", h.HandleStateDelete)
+	mux.HandleFunc("POST /state/clean", h.HandleStateClean)
+
 	if h.Profiles != nil {
 		h.Profiles.RegisterHandlers(mux)
 	}

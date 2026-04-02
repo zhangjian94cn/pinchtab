@@ -72,6 +72,25 @@ func (h *Handlers) HandleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				"description":        security["screencast"].Message,
 				"x-pinchtab-enabled": security["screencast"].Enabled,
 			}},
+			"/storage": map[string]any{
+				"get":    map[string]any{"summary": "Get localStorage/sessionStorage items (current origin only)"},
+				"post":   map[string]any{"summary": "Set a storage item"},
+				"delete": map[string]any{"summary": "Delete storage items or clear storage"},
+			},
+			"/state/list":  map[string]any{"get": map[string]any{"summary": "List saved state files"}},
+			"/state/load":  map[string]any{"post": map[string]any{"summary": "Load and restore browser state"}},
+			"/state/clean": map[string]any{"post": map[string]any{"summary": "Clean old state files"}},
+			"/state":       map[string]any{"delete": map[string]any{"summary": "Delete a saved state file"}},
+			"/state/show": map[string]any{"get": map[string]any{
+				"summary":            "Show state file details",
+				"description":        security["stateExport"].Message,
+				"x-pinchtab-enabled": security["stateExport"].Enabled,
+			}},
+			"/state/save": map[string]any{"post": map[string]any{
+				"summary":            "Save browser state (cookies, storage, metadata)",
+				"description":        security["stateExport"].Message,
+				"x-pinchtab-enabled": security["stateExport"].Enabled,
+			}},
 		},
 	})
 }

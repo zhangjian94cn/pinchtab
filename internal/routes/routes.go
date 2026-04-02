@@ -10,12 +10,13 @@ import "fmt"
 type Capability string
 
 const (
-	CapNone       Capability = ""
-	CapEvaluate   Capability = "evaluate"
-	CapMacro      Capability = "macro"
-	CapScreencast Capability = "screencast"
-	CapDownload   Capability = "download"
-	CapUpload     Capability = "upload"
+	CapNone        Capability = ""
+	CapEvaluate    Capability = "evaluate"
+	CapMacro       Capability = "macro"
+	CapScreencast  Capability = "screencast"
+	CapDownload    Capability = "download"
+	CapUpload      Capability = "upload"
+	CapStateExport Capability = "stateExport"
 )
 
 // Endpoint describes a single API route.
@@ -108,6 +109,17 @@ var coreEndpoints = []Endpoint{
 	{"POST", "/cache/clear", "Clear browser cache", CapNone, false},
 	{"GET", "/cache/status", "Cache status", CapNone, false},
 
+	// Storage (current origin only)
+	{"GET", "/storage", "Get storage items", CapNone, true},
+	{"POST", "/storage", "Set storage item", CapNone, true},
+	{"DELETE", "/storage", "Delete storage items", CapNone, true},
+
+	// State management
+	{"GET", "/state/list", "List saved states", CapNone, false},
+	{"POST", "/state/load", "Load browser state", CapNone, false},
+	{"DELETE", "/state", "Delete saved state", CapNone, false},
+	{"POST", "/state/clean", "Clean old state files", CapNone, false},
+
 	// Capability-gated
 	{"POST", "/evaluate", "Run JavaScript in page", CapEvaluate, true},
 	{"POST", "/macro", "Macro action pipeline", CapMacro, false},
@@ -115,6 +127,8 @@ var coreEndpoints = []Endpoint{
 	{"POST", "/upload", "Upload file to file input", CapUpload, true},
 	{"GET", "/screencast", "Live tab frame stream", CapScreencast, false},
 	{"GET", "/screencast/tabs", "List tabs available for screencast", CapScreencast, false},
+	{"GET", "/state/show", "Show state details", CapStateExport, false},
+	{"POST", "/state/save", "Save browser state", CapStateExport, false},
 }
 
 // Core returns a copy of the canonical endpoint list.
