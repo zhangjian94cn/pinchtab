@@ -1,7 +1,7 @@
-import type { AgentSession } from "../services/api";
+import type { Session } from "../services/api";
 
 interface SessionDividerProps {
-  session?: AgentSession;
+  session?: Session;
   sessionId: string;
   timestamp: string;
 }

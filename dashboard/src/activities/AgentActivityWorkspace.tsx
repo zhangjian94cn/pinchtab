@@ -164,7 +164,7 @@ export default function AgentActivityWorkspace({
   const [tabs, setTabs] = useState<InstanceTab[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [agentLoading, setAgentLoading] = useState(false);
-  const [agentSessions, setAgentSessions] = useState<api.AgentSession[]>([]);
+  const [agentSessions, setSessions] = useState<api.Session[]>([]);
   const [error, setError] = useState("");
   const [refreshNonce, setRefreshNonce] = useState(0);
 
@@ -190,9 +190,9 @@ export default function AgentActivityWorkspace({
   useEffect(() => {
     let cancelled = false;
     void api
-      .fetchAgentSessions()
+      .fetchSessions()
       .then((sessions) => {
-        if (!cancelled) setAgentSessions(sessions);
+        if (!cancelled) setSessions(sessions);
       })
       .catch(() => {});
     return () => {
@@ -346,7 +346,7 @@ export default function AgentActivityWorkspace({
     ? agentThreadEvents
     : visibleEvents;
 
-  const derivedSessions = useMemo<api.AgentSession[]>(() => {
+  const derivedSessions = useMemo<api.Session[]>(() => {
     const bySession = new Map<
       string,
       {
@@ -429,9 +429,9 @@ export default function AgentActivityWorkspace({
     let cancelled = false;
     const timer = setTimeout(() => {
       void api
-        .fetchAgentSessions()
+        .fetchSessions()
         .then((sessions) => {
-          if (!cancelled) setAgentSessions(sessions);
+          if (!cancelled) setSessions(sessions);
         })
         .catch(() => {});
     }, 500);

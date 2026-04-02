@@ -1,10 +1,10 @@
 import type { Agent } from "../../types";
-import type { AgentSession } from "../../services/api";
+import type { Session } from "../../services/api";
 
 interface Props {
   agent: Agent;
   selected: boolean;
-  sessions: AgentSession[];
+  sessions: Session[];
   activeSessionId?: string;
   onClick: (autoSessionId?: string) => void;
   onSelectSession: (sessionId: string) => void;
@@ -27,7 +27,7 @@ function formatSessionTime(ts: string): string {
   });
 }
 
-function sessionDisplayName(session: AgentSession): string {
+function sessionDisplayName(session: Session): string {
   if (session.label) return session.label;
   const start = formatSessionTime(session.createdAt);
   const end = formatSessionTime(session.lastSeenAt || session.createdAt);

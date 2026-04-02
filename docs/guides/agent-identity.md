@@ -79,7 +79,7 @@ Modes:
 ### Create a Session
 
 ```bash
-curl -X POST http://localhost:9867/api/agent-sessions \
+curl -X POST http://localhost:9867/api/sessions \
   -H "Authorization: Bearer $PINCHTAB_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"agentId": "bosch", "label": "research task"}'
@@ -123,15 +123,15 @@ No need to set `--agent-id` — the session carries the agent identity.
 
 ```bash
 # List all sessions
-curl http://localhost:9867/api/agent-sessions \
+curl http://localhost:9867/api/sessions \
   -H "Authorization: Bearer $PINCHTAB_TOKEN"
 
 # Rotate token (old token invalidated, new one returned)
-curl -X POST http://localhost:9867/api/agent-sessions/ses_e6ac8132fe7e7016/rotate \
+curl -X POST http://localhost:9867/api/sessions/ses_e6ac8132fe7e7016/rotate \
   -H "Authorization: Bearer $PINCHTAB_TOKEN"
 
 # Revoke
-curl -X POST http://localhost:9867/api/agent-sessions/ses_e6ac8132fe7e7016/revoke \
+curl -X POST http://localhost:9867/api/sessions/ses_e6ac8132fe7e7016/revoke \
   -H "Authorization: Bearer $PINCHTAB_TOKEN"
 ```
 

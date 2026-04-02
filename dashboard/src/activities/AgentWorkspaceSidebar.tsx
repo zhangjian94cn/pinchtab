@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { AgentItem } from "../components/molecules";
 import type { Agent, Instance, InstanceTab, Profile } from "../types";
-import type { AgentSession } from "../services/api";
+import type { Session } from "../services/api";
 import ActivityFilterMenu from "./ActivityFilterMenu";
 import type { ActivityFilters } from "./types";
 
@@ -12,7 +12,7 @@ interface AgentWorkspaceSidebarProps {
   visibleAgents: Agent[];
   activeAgentId: string;
   filters: ActivityFilters;
-  sessions: AgentSession[];
+  sessions: Session[];
   showAllAgentsOption?: boolean;
   showAgentFilter?: boolean;
   profiles: Profile[];
@@ -51,7 +51,7 @@ export default function AgentWorkspaceSidebar({
   onInstanceChange,
 }: AgentWorkspaceSidebarProps) {
   const sessionsByAgent = useMemo(() => {
-    const map = new Map<string, AgentSession[]>();
+    const map = new Map<string, Session[]>();
     for (const session of sessions) {
       const agentId = session.agentId || "";
       if (!agentId) continue;

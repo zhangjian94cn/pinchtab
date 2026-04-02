@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { EmptyState } from "../components/atoms";
-import type { AgentSession } from "../services/api";
+import type { Session } from "../services/api";
 import ActiveFilterBar from "./ActiveFilterBar";
 import SessionDivider from "./SessionDivider";
 import StreamRow from "./StreamRow";
@@ -9,7 +9,7 @@ import type { ActivityFilters, DashboardActivityEvent } from "./types";
 interface AgentStreamPanelProps {
   filters: ActivityFilters;
   events: DashboardActivityEvent[];
-  sessions?: AgentSession[];
+  sessions?: Session[];
   summary: string;
   error: string;
   loading: boolean;

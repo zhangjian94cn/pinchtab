@@ -76,7 +76,7 @@ func RunDashboard(cfg *config.RuntimeConfig, version string) {
 		Mode:        cfg.Sessions.Agent.Mode,
 		IdleTimeout: cfg.Sessions.Agent.IdleTimeout,
 		MaxLifetime: cfg.Sessions.Agent.MaxLifetime,
-		PersistPath: filepath.Join(cfg.StateDir, "agent-sessions.json"),
+		PersistPath: filepath.Join(cfg.StateDir, "sessions.json"),
 	})
 	agentSessionAPI := dashboard.NewAgentSessionAPI(agentSessionStore)
 

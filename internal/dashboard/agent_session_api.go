@@ -22,12 +22,12 @@ func NewAgentSessionAPI(store *agentsession.Store) *AgentSessionAPI {
 
 // RegisterHandlers registers agent session API routes.
 func (a *AgentSessionAPI) RegisterHandlers(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/agent-sessions", a.handleCreate)
-	mux.HandleFunc("GET /api/agent-sessions", a.handleList)
-	mux.HandleFunc("GET /api/agent-sessions/me", a.handleMe)
-	mux.HandleFunc("GET /api/agent-sessions/{id}", a.handleGet)
-	mux.HandleFunc("POST /api/agent-sessions/{id}/rotate", a.handleRotate)
-	mux.HandleFunc("POST /api/agent-sessions/{id}/revoke", a.handleRevoke)
+	mux.HandleFunc("POST /api/sessions", a.handleCreate)
+	mux.HandleFunc("GET /api/sessions", a.handleList)
+	mux.HandleFunc("GET /api/sessions/me", a.handleMe)
+	mux.HandleFunc("GET /api/sessions/{id}", a.handleGet)
+	mux.HandleFunc("POST /api/sessions/{id}/rotate", a.handleRotate)
+	mux.HandleFunc("POST /api/sessions/{id}/revoke", a.handleRevoke)
 }
 
 func (a *AgentSessionAPI) handleCreate(w http.ResponseWriter, r *http.Request) {

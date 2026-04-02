@@ -36,10 +36,10 @@ In `config.json`:
 
 ## Lifecycle
 
-1. **Create** — via dashboard API: `POST /api/agent-sessions`
+1. **Create** — via dashboard API: `POST /api/sessions`
 2. **Use** — agent sends `Authorization: Session ses_...` with each request
-3. **Rotate** — generate a new token, old one invalidated: `POST /api/agent-sessions/{id}/rotate`
-4. **Revoke** — permanently disable: `POST /api/agent-sessions/{id}/revoke`
+3. **Rotate** — generate a new token, old one invalidated: `POST /api/sessions/{id}/rotate`
+4. **Revoke** — permanently disable: `POST /api/sessions/{id}/revoke`
 
 ## Security
 

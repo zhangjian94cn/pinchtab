@@ -288,7 +288,7 @@ export async function fetchAgents(): Promise<Agent[]> {
   return request<Agent[]>("/api/agents");
 }
 
-export interface AgentSession {
+export interface Session {
   id: string;
   agentId: string;
   label?: string;
@@ -298,8 +298,8 @@ export interface AgentSession {
   status: string;
 }
 
-export async function fetchAgentSessions(): Promise<AgentSession[]> {
-  return request<AgentSession[]>("/api/agent-sessions");
+export async function fetchSessions(): Promise<Session[]> {
+  return request<Session[]>("/api/sessions");
 }
 
 export async function fetchAgent(

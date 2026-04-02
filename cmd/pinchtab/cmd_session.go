@@ -16,7 +16,7 @@ func init() {
 		Short: "Show current agent session details",
 		Run: func(cmd *cobra.Command, args []string) {
 			runCLI(func(rt cliRuntime) {
-				apiclient.DoGet(rt.client, rt.base, rt.token, "/api/agent-sessions/me", nil)
+				apiclient.DoGet(rt.client, rt.base, rt.token, "/api/sessions/me", nil)
 			})
 		},
 	}

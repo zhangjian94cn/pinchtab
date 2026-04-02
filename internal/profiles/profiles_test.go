@@ -309,7 +309,7 @@ func TestProfileManagerDelete(t *testing.T) {
 
 func TestProfileManagerLogsAndAnalyticsUseActivityRecorder(t *testing.T) {
 	pm := NewProfileManager(t.TempDir())
-	store, err := activity.NewStore(t.TempDir(), 30*time.Minute, 1)
+	store, err := activity.NewStore(t.TempDir(), 1)
 	if err != nil {
 		t.Fatalf("NewStore: %v", err)
 	}
