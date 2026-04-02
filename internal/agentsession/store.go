@@ -43,10 +43,10 @@ type Config struct {
 
 // Store manages agent sessions with persistence.
 type Store struct {
-	mu          sync.Mutex
-	sessions    map[string]*Session // keyed by session ID
-	cfg         Config
-	now         func() time.Time
+	mu       sync.Mutex
+	sessions map[string]*Session // keyed by session ID
+	cfg      Config
+	now      func() time.Time
 }
 
 const (
@@ -281,20 +281,20 @@ func (s *Store) pruneExpiredLocked() {
 // persistence types
 
 type persistedStore struct {
-	SavedAt  time.Time            `json:"savedAt"`
+	SavedAt  time.Time               `json:"savedAt"`
 	Sessions []persistedAgentSession `json:"sessions"`
 }
 
 type persistedAgentSession struct {
-	ID          string    `json:"id"`
-	AgentID     string    `json:"agentId"`
-	Label       string    `json:"label,omitempty"`
-	TokenHash   string    `json:"tokenHash"`
-	CreatedAt   time.Time `json:"createdAt"`
-	LastSeenAt  time.Time `json:"lastSeenAt"`
-	ExpiresAt   time.Time `json:"expiresAt,omitempty"`
-	Status      string    `json:"status"`
-	Grants      []string  `json:"grants,omitempty"`
+	ID         string    `json:"id"`
+	AgentID    string    `json:"agentId"`
+	Label      string    `json:"label,omitempty"`
+	TokenHash  string    `json:"tokenHash"`
+	CreatedAt  time.Time `json:"createdAt"`
+	LastSeenAt time.Time `json:"lastSeenAt"`
+	ExpiresAt  time.Time `json:"expiresAt,omitempty"`
+	Status     string    `json:"status"`
+	Grants     []string  `json:"grants,omitempty"`
 }
 
 func (s *Store) loadPersisted() {

@@ -68,7 +68,6 @@ func resolveCLIToken(cfg *config.RuntimeConfig) string {
 	return token
 }
 
-
 func resolveCLIAgentID() string {
 	if trimmed := strings.TrimSpace(cliAgentID); trimmed != "" {
 		return trimmed

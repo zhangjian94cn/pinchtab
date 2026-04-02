@@ -182,8 +182,8 @@ func TestGet(t *testing.T) {
 
 func TestList(t *testing.T) {
 	s := NewStore(Config{Enabled: true})
-	s.Create("agent-1", "")
-	s.Create("agent-2", "")
+	_, _, _ = s.Create("agent-1", "")
+	_, _, _ = s.Create("agent-2", "")
 
 	list := s.List()
 	if len(list) != 2 {
@@ -217,7 +217,7 @@ func TestPrunedOnLoad(t *testing.T) {
 	s1 := NewStore(Config{Enabled: true, PersistPath: path, MaxLifetime: 1 * time.Hour, IdleTimeout: 30 * time.Minute})
 	now := time.Now()
 	s1.now = func() time.Time { return now }
-	s1.Create("agent-1", "will expire")
+	_, _, _ = s1.Create("agent-1", "will expire")
 
 	// Load with time advanced past expiry — set now before NewStore calls loadPersisted
 	futureTime := now.Add(2 * time.Hour)
@@ -238,7 +238,7 @@ func TestAtomicWrite(t *testing.T) {
 	path := filepath.Join(dir, "sessions.json")
 
 	s := NewStore(Config{Enabled: true, PersistPath: path})
-	s.Create("agent-1", "")
+	_, _, _ = s.Create("agent-1", "")
 
 	// Verify file exists and is valid JSON
 	data, err := os.ReadFile(path)

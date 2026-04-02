@@ -19,7 +19,9 @@ export default function ActiveFilterBar({
     filters.instanceId ? `instance:${filters.instanceId}` : "",
     filters.tabId ? `tab:${filters.tabId}` : "",
     filters.action ? `action:${filters.action}` : "",
-    !hideSessionFilter && filters.sessionId ? `session:${filters.sessionId}` : "",
+    !hideSessionFilter && filters.sessionId
+      ? `session:${filters.sessionId}`
+      : "",
     filters.pathPrefix ? `path:${filters.pathPrefix}` : "",
   ].filter(Boolean);
 

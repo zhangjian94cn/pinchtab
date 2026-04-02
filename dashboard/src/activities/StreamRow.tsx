@@ -36,8 +36,6 @@ function isDefaultProfile(name: string | undefined): boolean {
   return lower === "default" || lower === "chrome-profile";
 }
 
-
-
 function quoted(value: string): string {
   return `"${value}"`;
 }

@@ -347,12 +347,15 @@ export default function AgentActivityWorkspace({
     : visibleEvents;
 
   const derivedSessions = useMemo<api.AgentSession[]>(() => {
-    const bySession = new Map<string, {
-      agentId: string;
-      label?: string;
-      earliest: string;
-      latest: string;
-    }>();
+    const bySession = new Map<
+      string,
+      {
+        agentId: string;
+        label?: string;
+        earliest: string;
+        latest: string;
+      }
+    >();
 
     for (const s of agentSessions) {
       bySession.set(s.id, {
@@ -363,9 +366,10 @@ export default function AgentActivityWorkspace({
       });
     }
 
-    const sourceEvents = usesAgentThreadView && filters.agentId
-      ? (agentEventsById[filters.agentId] ?? []).map(toDashboardActivityEvent)
-      : visibleEvents;
+    const sourceEvents =
+      usesAgentThreadView && filters.agentId
+        ? (agentEventsById[filters.agentId] ?? []).map(toDashboardActivityEvent)
+        : visibleEvents;
 
     for (const event of sourceEvents) {
       const sid = event.sessionId?.trim();
@@ -382,8 +386,10 @@ export default function AgentActivityWorkspace({
       }
 
       const ts = new Date(event.timestamp).getTime();
-      if (ts < new Date(existing.earliest).getTime()) existing.earliest = event.timestamp;
-      if (ts > new Date(existing.latest).getTime()) existing.latest = event.timestamp;
+      if (ts < new Date(existing.earliest).getTime())
+        existing.earliest = event.timestamp;
+      if (ts > new Date(existing.latest).getTime())
+        existing.latest = event.timestamp;
     }
 
     return [...bySession.entries()]
@@ -400,7 +406,13 @@ export default function AgentActivityWorkspace({
         (a, b) =>
           new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime(),
       );
-  }, [usesAgentThreadView, filters.agentId, agentEventsById, visibleEvents, agentSessions]);
+  }, [
+    usesAgentThreadView,
+    filters.agentId,
+    agentEventsById,
+    visibleEvents,
+    agentSessions,
+  ]);
 
   const unlabeledPtsKey = useMemo(() => {
     const apiIds = new Set(agentSessions.map((s) => s.id));
@@ -507,13 +519,15 @@ export default function AgentActivityWorkspace({
       return;
     }
 
-    const hasAgent = visibleAgents.some((agent) => agent.id === filters.agentId);
-    const targetAgent = hasAgent
-      ? filters.agentId
-      : visibleAgents[0].id;
-    const agentSessionList = derivedSessions
-      .filter((s) => s.agentId === targetAgent);
-    const latestSession = agentSessionList.length > 0 ? agentSessionList[0].id : "";
+    const hasAgent = visibleAgents.some(
+      (agent) => agent.id === filters.agentId,
+    );
+    const targetAgent = hasAgent ? filters.agentId : visibleAgents[0].id;
+    const agentSessionList = derivedSessions.filter(
+      (s) => s.agentId === targetAgent,
+    );
+    const latestSession =
+      agentSessionList.length > 0 ? agentSessionList[0].id : "";
 
     if (!hasAgent || (!filters.sessionId && latestSession)) {
       setFilters((current) => ({
@@ -522,7 +536,13 @@ export default function AgentActivityWorkspace({
         sessionId: latestSession,
       }));
     }
-  }, [filters.agentId, filters.sessionId, requireSelectedAgent, visibleAgents, derivedSessions]);
+  }, [
+    filters.agentId,
+    filters.sessionId,
+    requireSelectedAgent,
+    visibleAgents,
+    derivedSessions,
+  ]);
 
   const updateFilter = (key: keyof ActivityFilters, value: string) => {
     setFilters((current) => ({ ...current, [key]: value }));

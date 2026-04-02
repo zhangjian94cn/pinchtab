@@ -116,8 +116,7 @@ export default function AgentStreamPanel({
               const prevSessionId =
                 index > 0 ? events[index - 1].sessionId : undefined;
               const showDivider =
-                event.sessionId &&
-                event.sessionId !== prevSessionId;
+                event.sessionId && event.sessionId !== prevSessionId;
               return (
                 <div key={`${event.requestId || event.timestamp}-${index}`}>
                   {showDivider && (

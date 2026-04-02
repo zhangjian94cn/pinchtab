@@ -75,20 +75,6 @@ func ClientIP(r *http.Request) string {
 	return strings.TrimSpace(r.RemoteAddr)
 }
 
-func tokenFromAuthorizationHeader(auth string) string {
-	auth = strings.TrimSpace(auth)
-	if auth == "" {
-		return ""
-	}
-	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
-		return strings.TrimSpace(auth[7:])
-	}
-	if strings.HasPrefix(strings.ToLower(auth), "session ") {
-		return ""
-	}
-	return auth
-}
-
 func parseAuthorizationHeader(auth string) (bearer, session string) {
 	auth = strings.TrimSpace(auth)
 	if auth == "" {

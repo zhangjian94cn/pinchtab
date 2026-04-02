@@ -120,7 +120,9 @@ export default function AgentWorkspaceSidebar({
                   selected={activeAgentId === agent.id}
                   sessions={sessionsByAgent.get(agent.id) || []}
                   activeSessionId={filters.sessionId}
-                  onClick={(autoSessionId) => onSelectAgent(agent.id, autoSessionId)}
+                  onClick={(autoSessionId) =>
+                    onSelectAgent(agent.id, autoSessionId)
+                  }
                   onSelectSession={onSelectSession}
                 />
               ))}
