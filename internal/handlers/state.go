@@ -289,8 +289,26 @@ func (h *Handlers) HandleStateLoad(w http.ResponseWriter, r *http.Request) {
 			httpx.Error(w, 404, fmt.Errorf("no state file found for name or prefix %q", req.Name))
 			return
 		}
-		// Matches are sorted newest first; use the first.
-		path = state.ResolvePath(h.Config.StateDir, matches[0].Name)
+		// Matches are sorted newest first; resolve the actual file path from the matched name.
+		// We must call ResolvePath with the full matched name (not the prefix) so the
+		// correct .json / .json.enc file is located on disk.
+		resolvedPath := state.ResolvePath(h.Config.StateDir, matches[0].Name)
+		if resolvedPath == "" {
+			// Fallback: scan the dir directly to get the real path for this name.
+			dir := state.SessionsDir(h.Config.StateDir)
+			for _, ext := range []string{".json.enc", ".json"} {
+				candidate := filepath.Join(dir, matches[0].Name+ext)
+				if _, statErr := os.Stat(candidate); statErr == nil {
+					resolvedPath = candidate
+					break
+				}
+			}
+		}
+		if resolvedPath == "" {
+			httpx.Error(w, 404, fmt.Errorf("state file for prefix %q found in index but not on disk", req.Name))
+			return
+		}
+		path = resolvedPath
 	}
 
 	sf, err := state.Load(path, encryptionKey)

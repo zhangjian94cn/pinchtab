@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"bytes"
+	"github.com/pinchtab/pinchtab/internal/config"
 	"net/http/httptest"
 	"testing"
-	"github.com/pinchtab/pinchtab/internal/config"
 )
 
 func TestHandleStorageDelete_EmptyBody(t *testing.T) {
@@ -24,8 +24,8 @@ func TestHandleStorageDelete_EmptyBody(t *testing.T) {
 	if w.Code == 400 {
 		t.Fatalf("expected handleStorageDelete to handle empty body, got 400: %s", w.Body.String())
 	}
-	
-	// If it got past decode, it should try to find a tab. 
+
+	// If it got past decode, it should try to find a tab.
 	// Our mockBridge return a context for any tabID, so it should proceed to domain check.
 	// We expect 200 if the mock allows it.
 	if w.Code != 200 && w.Code != 404 {

@@ -51,7 +51,8 @@ services:
 
   runner-cli:
     build:
-      context: ./runner-cli
+      context: ../..
+      dockerfile: tests/e2e/runner-cli/Dockerfile
     depends_on:
       pinchtab:
         condition: service_healthy
