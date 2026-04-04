@@ -10,12 +10,13 @@ import "fmt"
 type Capability string
 
 const (
-	CapNone       Capability = ""
-	CapEvaluate   Capability = "evaluate"
-	CapMacro      Capability = "macro"
-	CapScreencast Capability = "screencast"
-	CapDownload   Capability = "download"
-	CapUpload     Capability = "upload"
+	CapNone        Capability = ""
+	CapEvaluate    Capability = "evaluate"
+	CapMacro       Capability = "macro"
+	CapScreencast  Capability = "screencast"
+	CapDownload    Capability = "download"
+	CapUpload      Capability = "upload"
+	CapStateExport Capability = "stateExport"
 )
 
 // Endpoint describes a single API route.
@@ -108,6 +109,13 @@ var coreEndpoints = []Endpoint{
 	{"POST", "/cache/clear", "Clear browser cache", CapNone, false},
 	{"GET", "/cache/status", "Cache status", CapNone, false},
 
+	// Storage operations are gated under stateExport because they access/mutate sensitive client-side state.
+	{"POST", "/storage", "Set storage item", CapStateExport, true},
+	{"DELETE", "/storage", "Delete storage items", CapStateExport, true},
+
+	// State management — list is read-only summary, ungated.
+	{"GET", "/state/list", "List saved states", CapNone, false},
+
 	// Capability-gated
 	{"POST", "/evaluate", "Run JavaScript in page", CapEvaluate, true},
 	{"POST", "/macro", "Macro action pipeline", CapMacro, false},
@@ -115,6 +123,13 @@ var coreEndpoints = []Endpoint{
 	{"POST", "/upload", "Upload file to file input", CapUpload, true},
 	{"GET", "/screencast", "Live tab frame stream", CapScreencast, false},
 	{"GET", "/screencast/tabs", "List tabs available for screencast", CapScreencast, false},
+	// CapStateExport gates all sensitive state I/O: reading, writing, injection, and deletion.
+	{"GET", "/storage", "Get storage items (current origin)", CapStateExport, true},
+	{"GET", "/state/show", "Show state file details", CapStateExport, false},
+	{"POST", "/state/save", "Save browser state", CapStateExport, false},
+	{"POST", "/state/load", "Load and restore browser state", CapStateExport, false},
+	{"DELETE", "/state", "Delete saved state file", CapStateExport, false},
+	{"POST", "/state/clean", "Clean old state files", CapStateExport, false},
 }
 
 // Core returns a copy of the canonical endpoint list.

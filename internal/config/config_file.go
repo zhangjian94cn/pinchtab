@@ -26,6 +26,7 @@ func DefaultFileConfig() FileConfig {
 	downloadMaxBytes := DefaultDownloadMaxBytes
 	allowUpload := false
 	allowClipboard := false
+	allowStateExport := false
 	enableActionGuards := true
 	uploadMaxRequestBytes := DefaultUploadMaxRequestBytes
 	uploadMaxFiles := DefaultUploadMaxFiles
@@ -67,6 +68,7 @@ func DefaultFileConfig() FileConfig {
 			DownloadMaxBytes:       &downloadMaxBytes,
 			AllowUpload:            &allowUpload,
 			AllowClipboard:         &allowClipboard,
+			AllowStateExport:       &allowStateExport,
 			EnableActionGuards:     &enableActionGuards,
 			UploadMaxRequestBytes:  &uploadMaxRequestBytes,
 			UploadMaxFiles:         &uploadMaxFiles,
@@ -193,6 +195,7 @@ type securityConfigJSON struct {
 	DownloadMaxBytes       *int           `json:"downloadMaxBytes"`
 	AllowUpload            *bool          `json:"allowUpload"`
 	AllowClipboard         *bool          `json:"allowClipboard"`
+	AllowStateExport       *bool          `json:"allowStateExport"`
 	EnableActionGuards     *bool          `json:"enableActionGuards"`
 	UploadMaxRequestBytes  *int           `json:"uploadMaxRequestBytes"`
 	UploadMaxFiles         *int           `json:"uploadMaxFiles"`
@@ -345,6 +348,7 @@ func (fc FileConfig) MarshalJSON() ([]byte, error) {
 			DownloadMaxBytes:       fc.Security.DownloadMaxBytes,
 			AllowUpload:            fc.Security.AllowUpload,
 			AllowClipboard:         fc.Security.AllowClipboard,
+			AllowStateExport:       fc.Security.AllowStateExport,
 			EnableActionGuards:     fc.Security.EnableActionGuards,
 			UploadMaxRequestBytes:  fc.Security.UploadMaxRequestBytes,
 			UploadMaxFiles:         fc.Security.UploadMaxFiles,
@@ -453,6 +457,7 @@ func FileConfigFromRuntime(cfg *RuntimeConfig) FileConfig {
 	downloadMaxBytes := cfg.EffectiveDownloadMaxBytes()
 	allowUpload := cfg.AllowUpload
 	allowClipboard := cfg.AllowClipboard
+	allowStateExport := cfg.AllowStateExport
 	enableActionGuards := cfg.EnableActionGuards
 	uploadMaxRequestBytes := cfg.EffectiveUploadMaxRequestBytes()
 	uploadMaxFiles := cfg.EffectiveUploadMaxFiles()
@@ -528,6 +533,7 @@ func FileConfigFromRuntime(cfg *RuntimeConfig) FileConfig {
 			DownloadMaxBytes:       &downloadMaxBytes,
 			AllowUpload:            &allowUpload,
 			AllowClipboard:         &allowClipboard,
+			AllowStateExport:       &allowStateExport,
 			EnableActionGuards:     &enableActionGuards,
 			UploadMaxRequestBytes:  &uploadMaxRequestBytes,
 			UploadMaxFiles:         &uploadMaxFiles,

@@ -20,6 +20,8 @@ func capabilityEnabled(orch *orchestrator.Orchestrator, cap routes.Capability) b
 		return orch.AllowsDownload()
 	case routes.CapUpload:
 		return orch.AllowsUpload()
+	case routes.CapStateExport:
+		return orch.AllowsStateExport()
 	default:
 		return false
 	}
@@ -38,6 +40,8 @@ func capabilitySetting(cap routes.Capability) (feature, setting, code string) {
 		return "download", "security.allowDownload", "download_disabled"
 	case routes.CapUpload:
 		return "upload", "security.allowUpload", "upload_disabled"
+	case routes.CapStateExport:
+		return "stateExport", "security.allowStateExport", "state_export_disabled"
 	default:
 		return string(cap), "security.allow" + string(cap), string(cap) + "_disabled"
 	}

@@ -23,6 +23,7 @@ services:
   fixtures:
     image: nginx:alpine
     volumes:
+      # Serves static test assets for deterministic, offline-safe E2E downloads.
       - ./fixtures:/usr/share/nginx/html:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/"]
@@ -51,7 +52,8 @@ services:
 
   runner-cli:
     build:
-      context: ./runner-cli
+      context: ../..
+      dockerfile: tests/e2e/runner-cli/Dockerfile
     depends_on:
       pinchtab:
         condition: service_healthy

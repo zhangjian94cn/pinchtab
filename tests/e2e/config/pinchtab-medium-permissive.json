@@ -37,6 +37,7 @@
     "allowEvaluate": true,
     "allowDownload": true,
     "allowUpload": true,
+    "allowStateExport": true,
     "attach": {
       "enabled": true,
       "allowHosts": [

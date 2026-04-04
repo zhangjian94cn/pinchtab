@@ -48,15 +48,61 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Resolve Docker Compose command
+        id: compose
+        shell: bash
+        run: |
+          set -euo pipefail
+          if docker compose version >/dev/null 2>&1; then
+            echo "command=docker compose" >> "$GITHUB_OUTPUT"
+          elif command -v docker-compose >/dev/null 2>&1; then
+            echo "command=docker-compose" >> "$GITHUB_OUTPUT"
+          else
+            echo "Neither 'docker compose' nor 'docker-compose' is available" >&2
+            exit 127
+          fi
+
+      - name: Install E2E runtime deps
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq coreutils curl
+
+      - name: E2E tool diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "suite=${{ inputs.suite }}"
+          for tool in bash docker jq awk sed grep find sort tee head; do
+            if command -v "$tool" >/dev/null 2>&1; then
+              echo "[ok] $tool: $(command -v "$tool")"
+            else
+              echo "[missing] $tool"
+            fi
+          done
+          docker --version || true
+          ${{ steps.compose.outputs.command }} version || true
+          jq --version || true
+
       - name: Run E2E suite
         id: e2e
         run: |
+          set -o pipefail
           set +e
           mkdir -p tests/e2e/results
           rm -f tests/e2e/results/summary*.txt tests/e2e/results/report*.md e2e-output.log
 
           ./dev e2e "${{ inputs.suite }}" 2>&1 | tee e2e-output.log
           EXIT_CODE=${PIPESTATUS[0]}
+
+          if [ "$EXIT_CODE" -eq 127 ]; then
+            echo ""
+            echo "==== E2E failed with exit code 127 (command not found likely) ===="
+            echo "==== command-not-found hints from log ===="
+            grep -nEi 'command not found|No such file or directory' e2e-output.log | tail -50 || true
+            echo "==== log tail ===="
+            tail -n 200 e2e-output.log || true
+          fi
 
           SUMMARY_FILES=$(find tests/e2e/results -maxdepth 1 -type f -name 'summary*.txt' | sort || true)
           if [ -n "$SUMMARY_FILES" ]; then
@@ -80,6 +126,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
+          PINCHTAB_COMPOSE: ${{ steps.compose.outputs.command }}
 
       - name: Upload E2E artifacts
         if: always()
@@ -96,14 +143,14 @@ jobs:
         if: failure() && inputs.compose_file != ''
         run: |
           echo "==== pinchtab logs ===="
-          docker compose -f "${{ inputs.compose_file }}" logs pinchtab || true
+          ${{ steps.compose.outputs.command }} -f "${{ inputs.compose_file }}" logs pinchtab || true
 
       - name: Dump instance inventory on failure
         if: failure() && inputs.dump_instance_inventory
         run: |
           echo ""
           echo "==== filtered Chrome/extension lines ===="
-          docker compose -f "${{ inputs.compose_file }}" logs pinchtab 2>/dev/null | grep -Ei 'chrome|extension|devtools|load-extension|disable-extensions|headless|warning|error' || true
+          ${{ steps.compose.outputs.command }} -f "${{ inputs.compose_file }}" logs pinchtab 2>/dev/null | grep -Ei 'chrome|extension|devtools|load-extension|disable-extensions|headless|warning|error' || true
           echo ""
           echo "==== instance inventory ===="
           INSTANCES_JSON=$(curl -sf http://localhost:9999/instances || true)

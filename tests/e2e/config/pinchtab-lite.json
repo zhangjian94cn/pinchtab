@@ -9,6 +9,7 @@
     "allowEvaluate": false,
     "allowDownload": false,
     "allowUpload": false,
+    "allowStateExport": true,
     "idpi": {
       "enabled": true,
       "strictMode": false,

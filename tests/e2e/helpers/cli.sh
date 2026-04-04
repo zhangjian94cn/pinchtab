@@ -42,6 +42,27 @@ pt() {
   fi
 }
 
+# Backward-compatible alias used by some scenario scripts.
+pt_cli() {
+  pt "$@"
+}
+
+assert_cli_ok() {
+  local desc="${1:-CLI command succeeds}"
+  local code="${PT_CODE:-127}"
+
+  if [ "$code" -eq 0 ]; then
+    echo -e "  ${GREEN}✓${NC} $desc"
+    ((ASSERTIONS_PASSED++)) || true
+  else
+    echo -e "  ${RED}✗${NC} $desc (exit $code)"
+    if [ -n "${PT_ERR:-}" ]; then
+      echo -e "  ${RED}stderr: ${PT_ERR}${NC}"
+    fi
+    ((ASSERTIONS_FAILED++)) || true
+  fi
+}
+
 pt_ok() {
   pt "$@"
   if [ "$PT_CODE" -eq 0 ]; then
@@ -108,7 +129,7 @@ assert_json_field_contains() {
   local needle="$2"
   local desc="${3:-$path contains '$needle'}"
   local actual
-  actual=$(echo "$PT_OUT" | jq -r "$path" 2>/dev/null)
+  actual=$(echo "$PT_OUT" | safe_jq -r "$path" 2>/dev/null)
   if [[ "$actual" == *"$needle"* ]]; then
     echo -e "  ${GREEN}✓${NC} $desc"
     ((ASSERTIONS_PASSED++)) || true
@@ -132,7 +153,7 @@ assert_file_exists() {
 
 config_version_of() {
   local path="$1"
-  jq -r '.configVersion // "none"' "$path"
+  safe_jq -r '.configVersion // "none"' "$path"
 }
 
 assert_config_version() {
@@ -190,7 +211,7 @@ assert_output_not_contains() {
 assert_output_json() {
   local desc="${1:-output is valid JSON}"
 
-  if echo "$PT_OUT" | jq . >/dev/null 2>&1; then
+  if echo "$PT_OUT" | safe_jq . >/dev/null 2>&1; then
     echo -e "  ${GREEN}✓${NC} $desc"
     ((ASSERTIONS_PASSED++)) || true
   else
@@ -205,7 +226,7 @@ assert_json_field() {
   local expected="$2"
   local desc="${3:-$path equals '$expected'}"
   local actual
-  actual=$(echo "$PT_OUT" | jq -r "$path" 2>/dev/null)
+  actual=$(echo "$PT_OUT" | safe_jq -r "$path" 2>/dev/null)
 
   if [ "$actual" = "$expected" ]; then
     echo -e "  ${GREEN}✓${NC} $desc"

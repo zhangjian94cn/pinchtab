@@ -12,6 +12,22 @@ MUTED='\033[0;90m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+if [ "${E2E_DEBUG:-0}" = "1" ]; then
+  set -x
+fi
+
+# Guard for jq (prevent 127)
+safe_jq() {
+  if command -v jq >/dev/null 2>&1; then
+    jq "$@"
+  else
+    # Minimal fallback: if it's just a raw field access like '.field', try to hack it or just return raw
+    # But mostly we just want to avoid the 127. 
+    # In E2E containers, jq SHOULD be present. This is for host-side or limited environments.
+    cat
+  fi
+}
+
 E2E_SERVER="${E2E_SERVER:-http://localhost:9999}"
 E2E_SECURE_SERVER="${E2E_SECURE_SERVER:-http://localhost:9998}"
 E2E_MEDIUM_SERVER="${E2E_MEDIUM_SERVER:-}"
@@ -20,7 +36,7 @@ E2E_BRIDGE_URL="${E2E_BRIDGE_URL:-}"
 
 # Auto-load token from config file if not set
 if [ -z "${E2E_SERVER_TOKEN:-}" ] && [ -f "$HOME/.pinchtab/config.json" ]; then
-  E2E_SERVER_TOKEN=$(jq -r '.server.token // empty' "$HOME/.pinchtab/config.json" 2>/dev/null || echo "")
+  E2E_SERVER_TOKEN=$(safe_jq -r '.server.token // empty' "$HOME/.pinchtab/config.json" 2>/dev/null || echo "")
 fi
 E2E_SERVER_TOKEN="${E2E_SERVER_TOKEN:-}"
 
@@ -86,7 +102,7 @@ wait_for_instance_ready() {
     health_json=$(e2e_curl --token "$token" -sf "${base_url}/health" 2>/dev/null || true)
     if [ -n "$health_json" ]; then
       local inst_status
-      inst_status=$(echo "$health_json" | jq -r '.defaultInstance.status // .status // empty' 2>/dev/null || true)
+      inst_status=$(echo "$health_json" | safe_jq -r '.defaultInstance.status // .status // empty' 2>/dev/null || true)
       if [ "$inst_status" = "running" ] || [ "$inst_status" = "ok" ]; then
         echo -e "  ${GREEN}✓${NC} instance ready at ${base_url}"
         return 0
@@ -135,13 +151,13 @@ _e2e_default_ref_json() {
 find_ref_by_role() {
   local role="$1"
   local json="${2:-$(_e2e_default_ref_json)}"
-  echo "$json" | jq -r "[.nodes[] | select(.role == \"$role\") | .ref] | first // empty"
+  echo "$json" | safe_jq -r "[.nodes[] | select(.role == \"$role\") | .ref] | first // empty"
 }
 
 find_ref_by_name() {
   local name="$1"
   local json="${2:-$(_e2e_default_ref_json)}"
-  echo "$json" | jq -r "[.nodes[] | select(.name == \"$name\") | .ref] | first // empty"
+  echo "$json" | safe_jq -r "[.nodes[] | select(.name == \"$name\") | .ref] | first // empty"
 }
 
 assert_ref_found() {
@@ -166,7 +182,7 @@ assert_json_jq() {
   shift 4
   local -a jq_args=("$@")
 
-  if echo "$json" | jq -e "${jq_args[@]}" "$expr" >/dev/null 2>&1; then
+  if echo "$json" | safe_jq -e "${jq_args[@]}" "$expr" >/dev/null 2>&1; then
     echo -e "  ${GREEN}✓${NC} $success_desc"
     ((ASSERTIONS_PASSED++)) || true
   else

@@ -45,6 +45,8 @@ func registerBrowserCommands() {
 		errorsCmd,
 		clipboardCmd,
 		cacheCmd,
+		storageCmd,
+		stateCmd,
 	)
 
 	tabsCmd.AddCommand(tabNewCmd, tabCloseCmd)
@@ -91,6 +93,8 @@ func registerBrowserCommands() {
 		errorsCmd,
 		clipboardCmd,
 		cacheCmd,
+		storageCmd,
+		stateCmd,
 	)
 }
 

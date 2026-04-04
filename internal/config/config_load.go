@@ -28,6 +28,8 @@ func Load() *RuntimeConfig {
 		DownloadAllowedDomains: nil,
 		DownloadMaxBytes:       DefaultDownloadMaxBytes,
 		AllowUpload:            false,
+		AllowClipboard:         false,
+		AllowStateExport:       false,
 		EnableActionGuards:     true,
 		UploadMaxRequestBytes:  DefaultUploadMaxRequestBytes,
 		UploadMaxFiles:         DefaultUploadMaxFiles,
@@ -236,6 +238,9 @@ func applyFileConfig(cfg *RuntimeConfig, fc *FileConfig) {
 	}
 	if fc.Security.AllowClipboard != nil {
 		cfg.AllowClipboard = *fc.Security.AllowClipboard
+	}
+	if fc.Security.AllowStateExport != nil {
+		cfg.AllowStateExport = *fc.Security.AllowStateExport
 	}
 	if fc.Security.EnableActionGuards != nil {
 		cfg.EnableActionGuards = *fc.Security.EnableActionGuards

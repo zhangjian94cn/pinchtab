@@ -38,6 +38,7 @@
     "allowDownload": true,
     "allowScreencast": true,
     "allowUpload": true,
+    "allowStateExport": true,
     "attach": {
       "enabled": true,
       "allowHosts": [

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chromedp/chromedp"
 	"github.com/pinchtab/pinchtab/internal/bridge"
 	"github.com/pinchtab/pinchtab/internal/config"
 	"github.com/pinchtab/pinchtab/internal/dashboard"
@@ -33,6 +34,9 @@ type Handlers struct {
 	IDPIGuard    idpi.Guard
 	Version      string // build version injected at startup
 	clipboard    clipboardStore
+
+	// Optional dependency injection (for unit testing)
+	evalJS func(ctx context.Context, expression string, out *string) error
 }
 
 func New(b bridge.BridgeAPI, cfg *config.RuntimeConfig, p bridge.ProfileService, d *dashboard.Dashboard, o bridge.OrchestratorService) *Handlers {
@@ -86,6 +90,11 @@ func New(b bridge.BridgeAPI, cfg *config.RuntimeConfig, p bridge.ProfileService,
 			return descs
 		},
 	)
+
+	// Default evalJS backed by chromedp for production
+	h.evalJS = func(ctx context.Context, expression string, out *string) error {
+		return chromedp.Run(ctx, chromedp.Evaluate(expression, out))
+	}
 
 	// Clean up .tmp export files orphaned by a previous crash.
 	go CleanupStaleTmpExports(cfg.StateDir)
@@ -218,6 +227,19 @@ func (h *Handlers) RegisterRoutes(mux *http.ServeMux, doShutdown func()) {
 	mux.HandleFunc("POST /errors/clear", h.HandleClearErrorLogs)
 	mux.HandleFunc("POST /cache/clear", h.HandleCacheClear)
 	mux.HandleFunc("GET /cache/status", h.HandleCacheStatus)
+
+	// Storage (current origin only)
+	mux.HandleFunc("GET /storage", h.HandleStorage)
+	mux.HandleFunc("POST /storage", h.HandleStorage)
+	mux.HandleFunc("DELETE /storage", h.HandleStorage)
+
+	// State management
+	mux.HandleFunc("GET /state/list", h.HandleStateList)
+	mux.HandleFunc("GET /state/show", h.HandleStateShow)
+	mux.HandleFunc("POST /state/save", h.HandleStateSave)
+	mux.HandleFunc("POST /state/load", h.HandleStateLoad)
+	mux.HandleFunc("DELETE /state", h.HandleStateDelete)
+	mux.HandleFunc("POST /state/clean", h.HandleStateClean)
 
 	if h.Profiles != nil {
 		h.Profiles.RegisterHandlers(mux)

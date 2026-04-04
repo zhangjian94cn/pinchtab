@@ -106,6 +106,74 @@ func DoPost(client *http.Client, base, token, path string, body map[string]any) 
 	return result
 }
 
+// DoDelete sends a DELETE request with an optional JSON body (e.g. for ?name= query params, pass nil body and handle params in path).
+func DoDelete(client *http.Client, base, token, path string, params url.Values) map[string]any {
+	u := base + path
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+	req, _ := http.NewRequest("DELETE", u, nil)
+	setAuthHeader(req, token)
+	req.Header.Set(activity.HeaderAgentID, "cli")
+	resp, err := client.Do(req)
+	if err != nil {
+		fatal("Request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respBody, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 400 {
+		handleAPIError(resp.StatusCode, respBody)
+		os.Exit(1)
+	}
+
+	var buf bytes.Buffer
+	if json.Indent(&buf, respBody, "", "  ") == nil {
+		fmt.Println(buf.String())
+	} else {
+		fmt.Println(string(respBody))
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		log.Printf("warning: error unmarshaling response: %v", err)
+	}
+	return result
+}
+
+// DoDeleteJSON sends a DELETE request with a JSON body.
+func DoDeleteJSON(client *http.Client, base, token, path string, body map[string]any) map[string]any {
+	data, _ := json.Marshal(body)
+	req, _ := http.NewRequest("DELETE", base+path, bytes.NewReader(data))
+	req.Header.Set("Content-Type", "application/json")
+	setAuthHeader(req, token)
+	req.Header.Set(activity.HeaderAgentID, "cli")
+	resp, err := client.Do(req)
+	if err != nil {
+		fatal("Request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respBody, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 400 {
+		handleAPIError(resp.StatusCode, respBody)
+		os.Exit(1)
+	}
+
+	var buf bytes.Buffer
+	if json.Indent(&buf, respBody, "", "  ") == nil {
+		fmt.Println(buf.String())
+	} else {
+		fmt.Println(string(respBody))
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		log.Printf("warning: error unmarshaling response: %v", err)
+	}
+	return result
+}
+
 // ResolveInstanceBase fetches the named instance from the orchestrator and returns
 // a base URL pointing directly at that instance's API port.
 func ResolveInstanceBase(orchBase, token, instanceID, bind string) string {

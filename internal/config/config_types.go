@@ -24,6 +24,7 @@ type RuntimeConfig struct {
 	DownloadMaxBytes       int
 	AllowUpload            bool
 	AllowClipboard         bool
+	AllowStateExport       bool
 	EnableActionGuards     bool // Enable bridge-level stale/navigation guard checks around actions
 	UploadMaxRequestBytes  int
 	UploadMaxFiles         int
@@ -255,6 +256,7 @@ type SecurityConfig struct {
 	DownloadMaxBytes       *int         `json:"downloadMaxBytes,omitempty"`
 	AllowUpload            *bool        `json:"allowUpload,omitempty"`
 	AllowClipboard         *bool        `json:"allowClipboard,omitempty"`
+	AllowStateExport       *bool        `json:"allowStateExport,omitempty"`
 	EnableActionGuards     *bool        `json:"enableActionGuards,omitempty"`
 	UploadMaxRequestBytes  *int         `json:"uploadMaxRequestBytes,omitempty"`
 	UploadMaxFiles         *int         `json:"uploadMaxFiles,omitempty"`
