@@ -3,6 +3,7 @@ package bridge
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
@@ -24,8 +25,9 @@ var scrollViewportCenter = func(ctx context.Context) (float64, float64, error) {
 }
 
 // submitFormIfButton checks whether the target element is a submit button and,
-// if so, triggers form submission via the submit event (which fires form
-// validators and JS handlers). Falls back to CDP click on failure.
+// if so, uses requestSubmit() for a single-shot submission: constraint
+// validation + submit event (so JS handlers run) + actual submission.
+// Falls back to CDP click if the element is not a submit button or on error.
 func submitFormIfButton(ctx context.Context, selector string) (bool, error) {
 	var isSubmit bool
 	err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`
@@ -41,24 +43,23 @@ func submitFormIfButton(ctx context.Context, selector string) (bool, error) {
 	if err != nil || !isSubmit {
 		return false, err
 	}
-	// Dispatch full event chain: focus → click → submit on the form.
+	// Fire full event chain via requestSubmit(el):
+	// - runs constraint validation
+	// - dispatches the submit event (so JS handlers like Odoo's fire)
+	// - submits the form if nothing cancels it
+	// One call, no double-fire (replaces manual dispatchEvent + form.submit).
 	var submitted bool
 	err = chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`
 		(function() {
 			var el = document.querySelector(%q);
 			if (!el) return false;
 			el.focus();
-			// Fire synthetic mouse events that Odoo and similar frameworks require.
 			var opts = {bubbles: true, cancelable: true};
 			el.dispatchEvent(new MouseEvent('mousedown', opts));
 			el.dispatchEvent(new MouseEvent('mouseup', opts));
 			el.dispatchEvent(new MouseEvent('click', opts));
-			// Also submit the closest form directly so navigation fires.
 			var form = el.closest('form');
-			if (form) {
-				var ev = new Event('submit', {bubbles: true, cancelable: true});
-				if (form.dispatchEvent(ev)) { form.submit(); }
-			}
+			if (form) { form.requestSubmit(el); }
 			return true;
 		})()
 	`, selector), &submitted))
@@ -68,10 +69,13 @@ func submitFormIfButton(ctx context.Context, selector string) (bool, error) {
 func (b *Bridge) actionClick(ctx context.Context, req ActionRequest) (map[string]any, error) {
 	var err error
 	if req.Selector != "" {
-		// For submit buttons, use full event chain + form.submit() to handle
-		// frameworks like Odoo that rely on JS submit handlers (issue #411).
+		// For submit buttons, use requestSubmit() to fire constraint validation,
+		// JS submit handlers, and actual submission in one shot (issue #411).
 		submitted, subErr := submitFormIfButton(ctx, req.Selector)
-		if subErr == nil && submitted {
+		if subErr != nil {
+			slog.Debug("submitFormIfButton failed, falling back to CDP click",
+				"selector", req.Selector, "error", subErr)
+		} else if submitted {
 			if req.WaitNav {
 				_ = chromedp.Run(ctx, chromedp.Sleep(b.Config.WaitNavDelay))
 			}
