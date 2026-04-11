@@ -254,7 +254,14 @@ func (h *Handlers) HandleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	maxDownloadBytes := h.Config.EffectiveDownloadMaxBytes()
 
-	validator := newDownloadURLGuard(h.Config.DownloadAllowedDomains)
+	// Download allowlist: prefer the explicit per-feature list, but fall
+	// back to the unified security.allowedDomains. This way operators only
+	// need to configure trusted domains once.
+	allowed := h.Config.DownloadAllowedDomains
+	if len(allowed) == 0 {
+		allowed = h.Config.AllowedDomains
+	}
+	validator := newDownloadURLGuard(allowed)
 	if err := validator.Validate(dlURL); err != nil {
 		httpx.Error(w, 400, fmt.Errorf("unsafe URL: %w", err))
 		return

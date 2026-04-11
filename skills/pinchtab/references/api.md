@@ -153,6 +153,8 @@ curl "/text?mode=raw"
 
 Returns `{url, title, text}`. Cheapest option (~1K tokens for most pages).
 
+Default mode picks the first **visible** `<article>` / `[role="main"]` / `<main>` (skips `display:none`) and strips nav/footer/ads. Use `mode=raw` for full `innerText`, or `/snapshot` for structured UI text like prices and button labels.
+
 ## PDF export
 
 Prefer returning base64 or raw bytes unless the user explicitly wants a file written to disk.

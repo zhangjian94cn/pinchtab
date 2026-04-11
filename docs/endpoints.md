@@ -161,6 +161,8 @@ Text query parameters:
 - `mode=raw`
 - `format`
 
+`/text` default mode picks the first **visible** `<article>` / `[role="main"]` / `<main>` (skips `display:none`) and strips nav/footer/ads. Use `mode=raw` for full `innerText`, or `/snapshot` for structured UI text like prices and button labels.
+
 Find body fields:
 
 - `query`

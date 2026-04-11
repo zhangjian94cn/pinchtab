@@ -399,10 +399,10 @@ func TestHandleGetConsoleLogs_BlocksWhenCachedTabPolicyIsBlocked(t *testing.T) {
 		hasState: true,
 	}
 	h := New(b, &config.RuntimeConfig{
+		AllowedDomains: []string{"example.com"},
 		IDPI: config.IDPIConfig{
-			Enabled:        true,
-			AllowedDomains: []string{"example.com"},
-			StrictMode:     true,
+			Enabled:    true,
+			StrictMode: true,
 		},
 	}, nil, nil, nil)
 
@@ -427,10 +427,10 @@ func TestHandleGetErrorLogs_BlocksWhenCachedTabPolicyIsBlocked(t *testing.T) {
 		hasState: true,
 	}
 	h := New(b, &config.RuntimeConfig{
+		AllowedDomains: []string{"example.com"},
 		IDPI: config.IDPIConfig{
-			Enabled:        true,
-			AllowedDomains: []string{"example.com"},
-			StrictMode:     true,
+			Enabled:    true,
+			StrictMode: true,
 		},
 	}, nil, nil, nil)
 
