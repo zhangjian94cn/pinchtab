@@ -90,7 +90,6 @@ func DefaultFileConfig() FileConfig {
 			},
 			IDPI: IDPIConfig{
 				Enabled:        true,
-				AllowedDomains: append([]string(nil), defaultLocalAllowedDomains...),
 				StrictMode:     true,
 				ScanContent:    true,
 				WrapContent:    true,
@@ -589,7 +588,7 @@ func FileConfigFromRuntime(cfg *RuntimeConfig) FileConfig {
 			AllowMacro:             &allowMacro,
 			AllowScreencast:        &allowScreencast,
 			AllowDownload:          &allowDownload,
-			AllowedDomains:         append([]string(nil), cfg.IDPI.AllowedDomains...),
+			AllowedDomains:         append([]string(nil), cfg.AllowedDomains...),
 			DownloadAllowedDomains: downloadAllowedDomains,
 			DownloadMaxBytes:       &downloadMaxBytes,
 			AllowUpload:            &allowUpload,

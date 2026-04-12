@@ -25,6 +25,7 @@ func Load() *RuntimeConfig {
 		AllowMacro:             false,
 		AllowScreencast:        false,
 		AllowDownload:          false,
+		AllowedDomains:         append([]string(nil), defaultLocalAllowedDomains...),
 		DownloadAllowedDomains: nil,
 		DownloadMaxBytes:       DefaultDownloadMaxBytes,
 		AllowUpload:            false,
@@ -81,7 +82,6 @@ func Load() *RuntimeConfig {
 		// IDPI defaults
 		IDPI: IDPIConfig{
 			Enabled:        true,
-			AllowedDomains: append([]string(nil), defaultLocalAllowedDomains...),
 			StrictMode:     true,
 			ScanContent:    true,
 			WrapContent:    true,
@@ -278,11 +278,7 @@ func applyFileConfig(cfg *RuntimeConfig, fc *FileConfig) {
 	cfg.TrustedResolveCIDRs = append([]string(nil), fc.Security.TrustedResolveCIDRs...)
 	// IDPI – copy the whole struct; individual fields have safe zero-value defaults.
 	cfg.IDPI = fc.Security.IDPI
-	// Unified allowlist: security.allowedDomains is the canonical source,
-	// with a legacy fallback to security.idpi.allowedDomains.
 	cfg.AllowedDomains = effectiveSecurityAllowedDomains(fc.Security)
-	// Mirror onto IDPI for existing consumers that still read the deprecated field.
-	cfg.IDPI.AllowedDomains = append([]string(nil), cfg.AllowedDomains...)
 	if fc.Observability.Activity.Enabled != nil {
 		cfg.Observability.Activity.Enabled = *fc.Observability.Activity.Enabled
 	}

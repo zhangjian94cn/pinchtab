@@ -273,7 +273,6 @@ func setSecurityField(s *SecurityConfig, field, value string) error {
 	}
 	if field == "allowedDomains" {
 		s.AllowedDomains = parseCSVList(value)
-		s.IDPI.AllowedDomains = append([]string(nil), s.AllowedDomains...)
 		return nil
 	}
 	if field == "downloadAllowedDomains" {
@@ -468,9 +467,6 @@ func setIDPIField(s *SecurityConfig, field, value string) error {
 			return fmt.Errorf("security.idpi.enabled: %w", err)
 		}
 		i.Enabled = b
-	case "allowedDomains":
-		s.AllowedDomains = parseCSVList(value)
-		i.AllowedDomains = append([]string(nil), s.AllowedDomains...)
 	case "strictMode":
 		b, err := parseBool(value)
 		if err != nil {

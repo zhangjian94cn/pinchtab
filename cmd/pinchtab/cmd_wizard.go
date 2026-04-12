@@ -166,7 +166,6 @@ func applyGuardUp(cfg *config.FileConfig) {
 	cfg.Security.IDPI.ScanContent = true
 	cfg.Security.IDPI.WrapContent = true
 	cfg.Security.AllowedDomains = []string{"127.0.0.1", "localhost", "::1"}
-	cfg.Security.IDPI.AllowedDomains = append([]string(nil), cfg.Security.AllowedDomains...)
 	cfg.Server.Bind = "127.0.0.1"
 }
 
@@ -179,8 +178,9 @@ func applyGuardDown(cfg *config.FileConfig) {
 	cfg.Security.AllowScreencast = &t
 	cfg.Security.IDPI.Enabled = false
 	cfg.Security.IDPI.StrictMode = false
+	cfg.Security.IDPI.ScanContent = false
+	cfg.Security.IDPI.WrapContent = false
 	cfg.Security.AllowedDomains = nil
-	cfg.Security.IDPI.AllowedDomains = nil
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────

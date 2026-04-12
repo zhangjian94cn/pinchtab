@@ -286,8 +286,6 @@ func getIDPIField(i *IDPIConfig, field string) (string, error) {
 	switch field {
 	case "enabled":
 		return strconv.FormatBool(i.Enabled), nil
-	case "allowedDomains":
-		return strings.Join(i.AllowedDomains, ","), nil
 	case "strictMode":
 		return strconv.FormatBool(i.StrictMode), nil
 	case "scanContent":

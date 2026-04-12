@@ -137,7 +137,6 @@ func NormalizeFileConfigAliasesFromJSON(fc *FileConfig, data []byte) {
 
 	var raw rawConfig
 	if err := json.Unmarshal(data, &raw); err != nil || raw.Security == nil {
-		NormalizeFileConfigAliases(fc)
 		return
 	}
 
@@ -147,13 +146,4 @@ func NormalizeFileConfigAliasesFromJSON(fc *FileConfig, data []byte) {
 	case raw.Security.IDPI != nil && raw.Security.IDPI.AllowedDomains != nil:
 		fc.Security.AllowedDomains = append([]string(nil), (*raw.Security.IDPI.AllowedDomains)...)
 	}
-
-	NormalizeFileConfigAliases(fc)
-}
-
-func NormalizeFileConfigAliases(fc *FileConfig) {
-	if fc == nil {
-		return
-	}
-	fc.Security.IDPI.AllowedDomains = append([]string(nil), fc.Security.AllowedDomains...)
 }

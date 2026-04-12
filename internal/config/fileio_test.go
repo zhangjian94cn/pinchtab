@@ -57,7 +57,6 @@ func TestLoadAndSaveFileConfigPreservesExplicitZeroValues(t *testing.T) {
 	fc.InstanceDefaults.UserAgent = ""
 	fc.Security.IDPI.StrictMode = false
 	fc.Security.AllowedDomains = []string{}
-	fc.Security.IDPI.AllowedDomains = []string{}
 	fc.Security.IDPI.CustomPatterns = []string{}
 	fc.Security.IDPI.ShieldThreshold = 30
 
@@ -75,9 +74,6 @@ func TestLoadAndSaveFileConfigPreservesExplicitZeroValues(t *testing.T) {
 	}
 	if loaded.Security.IDPI.StrictMode {
 		t.Errorf("loaded strictMode = %v, want false", loaded.Security.IDPI.StrictMode)
-	}
-	if len(loaded.Security.IDPI.AllowedDomains) != 0 {
-		t.Errorf("loaded allowedDomains = %v, want empty list", loaded.Security.IDPI.AllowedDomains)
 	}
 	if len(loaded.Security.AllowedDomains) != 0 {
 		t.Errorf("loaded security.allowedDomains = %v, want empty list", loaded.Security.AllowedDomains)
@@ -114,8 +110,5 @@ func TestLoadFileConfig_PromotesLegacyIDPIAllowedDomains(t *testing.T) {
 	}
 	if got := loaded.Security.AllowedDomains; len(got) != 2 || got[0] != "fixtures" || got[1] != "*.example.com" {
 		t.Fatalf("security.allowedDomains = %v, want promoted legacy values", got)
-	}
-	if got := loaded.Security.IDPI.AllowedDomains; len(got) != 2 || got[0] != "fixtures" || got[1] != "*.example.com" {
-		t.Fatalf("security.idpi.allowedDomains alias = %v, want synced legacy values", got)
 	}
 }

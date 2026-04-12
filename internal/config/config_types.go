@@ -23,9 +23,7 @@ type RuntimeConfig struct {
 	AllowScreencast bool
 	AllowDownload   bool
 	// AllowedDomains is the unified per-instance allowlist sourced from
-	// security.allowedDomains in the file config. Consumers (IDPI guard,
-	// download handler, tab policy) should prefer this list over the
-	// deprecated IDPI.AllowedDomains duplicate.
+	// security.allowedDomains in the file config.
 	AllowedDomains         []string
 	DownloadAllowedDomains []string
 	DownloadMaxBytes       int
@@ -134,7 +132,6 @@ type DashboardSessionRuntimeConfig struct {
 // defense layer.
 type IDPIConfig struct {
 	Enabled        bool     `json:"enabled,omitempty"`
-	AllowedDomains []string `json:"allowedDomains,omitempty"`
 	StrictMode     bool     `json:"strictMode,omitempty"`
 	ScanContent    bool     `json:"scanContent,omitempty"`
 	WrapContent    bool     `json:"wrapContent,omitempty"`

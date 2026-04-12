@@ -228,17 +228,17 @@ func TestShouldBlockPopupTarget(t *testing.T) {
 
 func TestEvaluateTabPolicy(t *testing.T) {
 	cfg := config.IDPIConfig{
-		Enabled:        true,
-		AllowedDomains: []string{"example.com"},
-		StrictMode:     true,
+		Enabled:    true,
+		StrictMode: true,
 	}
+	allowedDomains := []string{"example.com"}
 
-	allowed := EvaluateTabPolicy("https://example.com/path", cfg)
+	allowed := EvaluateTabPolicy("https://example.com/path", cfg, allowedDomains)
 	if allowed.Threat || allowed.Blocked {
 		t.Fatalf("expected allowed domain to pass, got %+v", allowed)
 	}
 
-	blocked := EvaluateTabPolicy("https://evil.example.net/path", cfg)
+	blocked := EvaluateTabPolicy("https://evil.example.net/path", cfg, allowedDomains)
 	if !blocked.Threat || !blocked.Blocked {
 		t.Fatalf("expected blocked domain to fail, got %+v", blocked)
 	}

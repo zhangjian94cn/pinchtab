@@ -50,10 +50,9 @@ func (g *downloadURLGuard) isDomainAllowed(rawURL string) bool {
 		return false
 	}
 	result := idpi.CheckDomain(rawURL, config.IDPIConfig{
-		Enabled:        true,
-		AllowedDomains: append([]string(nil), g.allowedDomains...),
-		StrictMode:     true,
-	})
+		Enabled:    true,
+		StrictMode: true,
+	}, g.allowedDomains)
 	return !result.Blocked
 }
 
@@ -75,10 +74,9 @@ func (g *downloadURLGuard) Validate(rawURL string) error {
 	// Allowlisted domains bypass IP validation (e.g. internal docker hosts).
 	if len(g.allowedDomains) > 0 {
 		result := idpi.CheckDomain(rawURL, config.IDPIConfig{
-			Enabled:        true,
-			AllowedDomains: append([]string(nil), g.allowedDomains...),
-			StrictMode:     true,
-		})
+			Enabled:    true,
+			StrictMode: true,
+		}, g.allowedDomains)
 		if result.Blocked {
 			return fmt.Errorf("domain not allowed by security.downloadAllowedDomains")
 		}

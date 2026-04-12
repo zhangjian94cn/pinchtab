@@ -53,7 +53,7 @@ func (h *Handlers) enforceCurrentTabDomainPolicy(w http.ResponseWriter, r *http.
 		return "", false
 	}
 
-	state := bridge.EvaluateTabPolicy(currentURL, h.Config.IDPI)
+	state := bridge.EvaluateTabPolicy(currentURL, h.Config.IDPI, h.Config.AllowedDomains)
 	if setter, ok := h.Bridge.(tabPolicyStateSetter); ok {
 		setter.SetTabPolicyState(tabID, state)
 	}

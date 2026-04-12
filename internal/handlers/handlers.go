@@ -53,7 +53,7 @@ func New(b bridge.BridgeAPI, cfg *config.RuntimeConfig, p bridge.ProfileService,
 		IdMgr:        ids.NewManager(),
 		Matcher:      matcher,
 		IntentCache:  intentCache,
-		IDPIGuard:    idpi.NewGuard(cfg.IDPI),
+		IDPIGuard:    idpi.NewGuard(cfg.IDPI, cfg.AllowedDomains),
 	}
 
 	// Wire up the recovery engine with callbacks that delegate back to

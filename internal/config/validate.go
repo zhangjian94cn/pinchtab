@@ -151,9 +151,7 @@ func ValidateFileConfig(fc *FileConfig) []error {
 	}
 
 	// IDPI validation
-	idpiCfg := fc.Security.IDPI
-	idpiCfg.AllowedDomains = effectiveSecurityAllowedDomains(fc.Security)
-	errs = append(errs, validateIDPIConfig(idpiCfg)...)
+	errs = append(errs, validateIDPIConfig(fc.Security.IDPI, effectiveSecurityAllowedDomains(fc.Security))...)
 	errs = append(errs, validateAllowedDomainList("security.downloadAllowedDomains", fc.Security.DownloadAllowedDomains)...)
 	errs = append(errs, validateTrustedCIDRList("security.trustedProxyCIDRs", fc.Security.TrustedProxyCIDRs)...)
 	errs = append(errs, validateTrustedCIDRList("security.trustedResolveCIDRs", fc.Security.TrustedResolveCIDRs)...)
@@ -332,12 +330,12 @@ func ValidStrategies() []string {
 
 // validateIDPIConfig validates the security.idpi sub-section.
 // Validation is skipped when IDPI is disabled; a zero-value IDPIConfig is always valid.
-func validateIDPIConfig(cfg IDPIConfig) []error {
+func validateIDPIConfig(cfg IDPIConfig, allowedDomains []string) []error {
 	if !cfg.Enabled {
 		return nil
 	}
 
-	errs := validateAllowedDomainList("security.allowedDomains", cfg.AllowedDomains)
+	errs := validateAllowedDomainList("security.allowedDomains", allowedDomains)
 
 	for _, p := range cfg.CustomPatterns {
 		if strings.TrimSpace(p) == "" {

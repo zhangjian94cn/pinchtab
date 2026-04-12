@@ -10,12 +10,13 @@ import (
 // ShieldGuard uses the idpishield library for all IDPI scanning:
 // content analysis, domain checking, and content wrapping.
 type ShieldGuard struct {
-	shield *idpishield.Shield
-	cfg    config.IDPIConfig
+	shield         *idpishield.Shield
+	cfg            config.IDPIConfig
+	allowedDomains []string
 }
 
 // NewShieldGuard creates a guard backed by idpishield.
-func NewShieldGuard(cfg config.IDPIConfig) *ShieldGuard {
+func NewShieldGuard(cfg config.IDPIConfig, allowedDomains []string) *ShieldGuard {
 	mode := idpishield.ModeBalanced
 	if cfg.StrictMode {
 		mode = idpishield.ModeDeep
@@ -28,14 +29,15 @@ func NewShieldGuard(cfg config.IDPIConfig) *ShieldGuard {
 
 	shield := idpishield.New(idpishield.Config{
 		Mode:           mode,
-		AllowedDomains: cfg.AllowedDomains,
+		AllowedDomains: allowedDomains,
 		StrictMode:     cfg.StrictMode,
 		BlockThreshold: blockThreshold,
 	})
 
 	return &ShieldGuard{
-		shield: shield,
-		cfg:    cfg,
+		shield:         shield,
+		cfg:            cfg,
+		allowedDomains: append([]string(nil), allowedDomains...),
 	}
 }
 

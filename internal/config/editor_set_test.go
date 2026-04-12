@@ -213,9 +213,6 @@ func TestSetConfigValue_IDPIFields(t *testing.T) {
 		wantErr bool
 	}{
 		{"security.idpi.enabled", "true", func(fc *FileConfig) bool { return fc.Security.IDPI.Enabled }, false},
-		{"security.idpi.allowedDomains", "localhost, example.com", func(fc *FileConfig) bool {
-			return len(fc.Security.IDPI.AllowedDomains) == 2 && fc.Security.IDPI.AllowedDomains[1] == "example.com"
-		}, false},
 		{"security.idpi.strictMode", "false", func(fc *FileConfig) bool { return !fc.Security.IDPI.StrictMode }, false},
 		{"security.idpi.scanContent", "true", func(fc *FileConfig) bool { return fc.Security.IDPI.ScanContent }, false},
 		{"security.idpi.wrapContent", "true", func(fc *FileConfig) bool { return fc.Security.IDPI.WrapContent }, false},
@@ -223,6 +220,7 @@ func TestSetConfigValue_IDPIFields(t *testing.T) {
 			return len(fc.Security.IDPI.CustomPatterns) == 2 && fc.Security.IDPI.CustomPatterns[0] == "ignore previous instructions"
 		}, false},
 		{"security.idpi.enabled", "maybe", nil, true},
+		{"security.idpi.allowedDomains", "localhost, example.com", nil, true},
 		{"security.idpi.unknown", "value", nil, true},
 	}
 
@@ -241,16 +239,13 @@ func TestSetConfigValue_IDPIFields(t *testing.T) {
 	}
 }
 
-func TestSetConfigValue_SecurityAllowedDomainsAlias(t *testing.T) {
+func TestSetConfigValue_SecurityAllowedDomains(t *testing.T) {
 	fc := &FileConfig{}
 	if err := SetConfigValue(fc, "security.allowedDomains", "localhost, example.com"); err != nil {
 		t.Fatalf("SetConfigValue(security.allowedDomains) error = %v", err)
 	}
 	if len(fc.Security.AllowedDomains) != 2 || fc.Security.AllowedDomains[1] != "example.com" {
-		t.Fatalf("security.allowedDomains = %v, want synced values", fc.Security.AllowedDomains)
-	}
-	if len(fc.Security.IDPI.AllowedDomains) != 2 || fc.Security.IDPI.AllowedDomains[1] != "example.com" {
-		t.Fatalf("security.idpi.allowedDomains alias = %v, want synced values", fc.Security.IDPI.AllowedDomains)
+		t.Fatalf("security.allowedDomains = %v, want parsed values", fc.Security.AllowedDomains)
 	}
 }
 

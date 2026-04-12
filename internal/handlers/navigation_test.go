@@ -274,10 +274,10 @@ func TestHandleNavigate_AllowsResolvedPrivateIPWhenIDPIAllowlisted(t *testing.T)
 
 	m := &mockBridge{}
 	h := New(m, &config.RuntimeConfig{
+		AllowedDomains: []string{"fixtures"},
 		IDPI: config.IDPIConfig{
-			Enabled:        true,
-			StrictMode:     true,
-			AllowedDomains: []string{"fixtures"},
+			Enabled:    true,
+			StrictMode: true,
 		},
 	}, nil, nil, nil)
 
